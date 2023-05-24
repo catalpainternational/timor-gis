@@ -1,0 +1,84 @@
+[tool.isort]
+profile = 'black'
+skip = ['env', 'migrations']
+
+[tool.black]
+line-length = 119
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+  | \.git
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | env
+  | migrations
+)/
+'''
+
+[tool.ruff]
+line-length = 119
+exclude = ['migrations']
+
+[tool.poetry]
+name = "timor-locations"
+version = "0.0.1"
+description = "Timor-Leste geographic datasets"
+authors = [
+  "Joshua Brooks <josh@catalpa.io>",
+  "Anders Hofstee <anders@catalpa.io>",
+]
+exclude = ["tests", "sl_tests", "timor_locations/data", "docs"]
+license = "GPLv3"
+
+readme = 'README.md'
+
+repository = "https://github.com/catalpainternational/timor_locations"
+homepage = "https://github.com/catalpainternational/timor_locations"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pydantic = ">1.10.6,<2"
+django-ninja = ">=0.21.0"
+django-geojson = ">=4.0.0"
+geojson-pydantic = "^0.6.2"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+black = "*"
+flake8 = "*"
+isort = "*"
+pre-commit = "*"
+mypy = "*"
+django-stubs = {extras = ["compatible-mypy"], version = "*"}
+psycopg2-binary = "*"
+pytest-django = "*"
+pytest-cov = "*"
+factory-boy = "*"
+ruff = "^0.0.269"
+django-extensions = "^3.2.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+plugins = ["mypy_django_plugin.main"]
+
+[tool.django-stubs]
+django_settings_module = "tests.test_settings"
+
+[[tool.mypy.overrides]]
+module = "setuptools"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.factories"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "factory"
+ignore_missing_imports = true

@@ -41,7 +41,6 @@ homepage = "https://github.com/catalpainternational/timor_locations"
 python = "^3.10"
 pydantic = ">1.10.6,<2"
 django-ninja = ">=0.21.0"
-django-geojson = ">=4.0.0"
 geojson-pydantic = "^0.6.2"
 
 [tool.poetry.group.dev]

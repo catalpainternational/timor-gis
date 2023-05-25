@@ -15,7 +15,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS("Priming the Districts table"))
-        ds = DataSource(Path() / "timor_locations" / "data" / "sucos.gpkg")
+        ds = DataSource(Path() / "timor_locations" / "data" / "sukus.gpkg")
 
         lm = LayerMapping(Suco, ds, suco_mapping)
         self.stdout.write(self.style.SUCCESS("Saving sucos from the gpkg file"))
@@ -23,7 +23,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("Adding admin posts and municipalities"))
 
-        with open(Path() / "timor_locations" / "data" / "suco.csv") as csvfile:
+        with open(Path() / "timor_locations" / "data" / "sukus.csv") as csvfile:
             csvreader = csv.reader(csvfile)
             posts: list[str, str] = list(csvreader)[1:]
             for SUCONAME, SUBDSTCODE, DISTCODE, DISTNAME, SUBDISTRCT, SUCOCODE, REGION in posts:

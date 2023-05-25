@@ -1,3 +1,5 @@
+from importlib import resources
+import os
 from django.core.management.base import BaseCommand
 from pathlib import Path
 from django.contrib.gis.gdal import DataSource
@@ -9,13 +11,24 @@ import csv
 
 suco_mapping = {"geom": "MULTIPOLYGON", "name": "SUCONAME", "pcode": "SUCOCODE"}
 
+# Data for this is help in Git LFS
+
+
+SOURCE_GEO = resources.files('timor_locations.data').joinpath('sukus.gpkg')
+SOURCE_CSV = resources.files('timor_locations.data').joinpath('sukus.csv')
 
 class Command(BaseCommand):
     help = "Import Timor data from source shapefiles."
 
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS("Priming the Districts table"))
-        ds = DataSource(Path() / "timor_locations" / "data" / "sukus.gpkg")
+
+        if not os.path.exists(SOURCE_GEO):
+            raise FileNotFoundError(f"The geographic data is not present: expected a file at {SOURCE_GEO}")
+        if not os.path.exists(SOURCE_CSV):
+            raise FileNotFoundError(f"The CSV file for data is not present: expected a file at {SOURCE_CSV}")
+
+        ds = DataSource(SOURCE_GEO)
 
         lm = LayerMapping(Suco, ds, suco_mapping)
         self.stdout.write(self.style.SUCCESS("Saving sucos from the gpkg file"))
@@ -23,7 +36,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("Adding admin posts and municipalities"))
 
-        with open(Path() / "timor_locations" / "data" / "sukus.csv") as csvfile:
+        with open(SOURCE_CSV) as csvfile:
             csvreader = csv.reader(csvfile)
             posts: list[str, str] = list(csvreader)[1:]
             for SUCONAME, SUBDSTCODE, DISTCODE, DISTNAME, SUBDISTRCT, SUCOCODE, REGION in posts:

@@ -60,6 +60,12 @@ factory-boy = "*"
 ruff = "^0.0.269"
 django-extensions = "^3.2.1"
 
+[tool.poetry.group.topology]
+optional = true
+
+[tool.poetry.group.topology.dependencies]
+topojson = "^1.5"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

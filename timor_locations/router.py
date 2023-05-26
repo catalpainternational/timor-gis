@@ -1,8 +1,7 @@
+from geojson_pydantic import FeatureCollection
 from ninja import Router
 
-from geojson_pydantic import FeatureCollection
-
-from timor_locations import schemas, models
+from timor_locations import models, schemas
 
 router = Router(tags=["Timor GIS"])
 
@@ -41,3 +40,12 @@ def admin_posts(request):
 @router.get("/municipalities.json", response=FeatureCollection)
 def municipalities(request):
     return models.Municipality.objects.as_feature_collection()
+
+
+# The following endpoints require appropriate data in the database
+# See the `create_topology` command
+
+
+@router.get("/{slug}.topojson", response=schemas.Topology)
+def original_topojson(request, slug: str):
+    return models.TopoJson.objects.get(pk=slug).topology

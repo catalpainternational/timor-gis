@@ -1,21 +1,22 @@
-from importlib import resources
+import csv
 import os
-from django.core.management.base import BaseCommand
-from pathlib import Path
+from importlib import resources
+
 from django.contrib.gis.gdal import DataSource
 from django.contrib.gis.utils import LayerMapping
+from django.core.management.base import BaseCommand
 from django.db import connection
-from timor_locations.models import Suco, AdministrativePost, Municipality
-import csv
 
+from timor_locations.models import AdministrativePost, Municipality, Suco
 
 suco_mapping = {"geom": "MULTIPOLYGON", "name": "SUCONAME", "pcode": "SUCOCODE"}
 
 # Data for this is help in Git LFS
 
 
-SOURCE_GEO = resources.files('timor_locations.data').joinpath('sukus.gpkg')
-SOURCE_CSV = resources.files('timor_locations.data').joinpath('sukus.csv')
+SOURCE_GEO = resources.files("timor_locations.data").joinpath("sukus.gpkg")
+SOURCE_CSV = resources.files("timor_locations.data").joinpath("sukus.csv")
+
 
 class Command(BaseCommand):
     help = "Import Timor data from source shapefiles."
@@ -54,7 +55,7 @@ class Command(BaseCommand):
         with connection.cursor() as c:
             c.execute(
                 """
-                UPDATE timor_locations_administrativepost ap 
+                UPDATE timor_locations_administrativepost ap
                     SET geom = (SELECT st_multi(st_union(geom)) FROM timor_locations_suco s WHERE s.adminpost_id = ap.pcode);
                 UPDATE timor_locations_municipality m
                     SET geom = (SELECT st_multi(st_union(geom)) FROM timor_locations_administrativepost ap WHERE ap.municipality_id = m.pcode);

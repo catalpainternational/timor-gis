@@ -72,7 +72,7 @@ class TimorGeoArea(DateStampedModel):
         return MultiPolygon.construct(**json.loads(self.geojson))
 
     def as_feature(self):
-        properties = dict(name = self.name, kind=self._meta.model_name)
+        properties = dict(name = self.name, id=self.pcode, kind=self._meta.model_name)
 
         for optional in ("adminpost_id", "municipality_id"):
             if hasattr(self, optional):

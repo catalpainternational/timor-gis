@@ -25,7 +25,7 @@ class Transform(BaseModel):
 
 
 class Topology(BaseModel):
-    type: str = Literal[
+    type: Literal[
         "Topology",
         "Point",
         "MultiPoint",

@@ -1,4 +1,10 @@
-# 2.0.3
+# 0.0.5
+
+ - Bugfix for municipality name
+
+# 0.0.4
+
+ - Added municipality and admin post names to 'Suco' to avoid lookups
 
 # 0.0.3
 

@@ -40,7 +40,16 @@ class GeoQuerySet(models.QuerySet):
 
 class GeoDataManager(models.Manager):
     def get_queryset(self) -> GeoQuerySet:
-        return GeoQuerySet(self.model, using=self._db)
+        queryset = GeoQuerySet(self.model, using=self._db)
+        if self.model == Suco:
+            queryset = queryset.annotate(
+                adminpost_name=F("adminpost__name"),
+                municipality_name=F("adminpost__municipality__name"),
+                municipality_id=F("adminpost__municipality__pcode"),
+            )
+        if self.model == AdministrativePost:
+            queryset = queryset.annotate(municipality_name=F("municipality__name"))
+        return queryset
 
     def as_feature_list(self, **kwargs) -> list[Feature]:
         return self.get_queryset().as_feature_list(**kwargs)
@@ -74,7 +83,7 @@ class TimorGeoArea(DateStampedModel):
     def as_feature(self):
         properties = dict(name = self.name, id=self.pcode, kind=self._meta.model_name)
 
-        for optional in ("adminpost_id", "municipality_id"):
+        for optional in ("adminpost_id", "municipality_id", "adminpost_name", "municipality_name"):
             if hasattr(self, optional):
                 properties[optional] = getattr(self, optional)
             

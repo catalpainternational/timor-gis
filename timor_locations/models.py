@@ -123,6 +123,10 @@ class Suco(TimorGeoArea):
     adminpost = models.ForeignKey(AdministrativePost, on_delete=models.PROTECT, null=True)
 
 
+class Aldeia(TimorGeoArea):
+    suco = models.ForeignKey(Suco, on_delete=models.PROTECT, null=True)
+
+
 class TopoJson(models.Model):
     """
     Stores topology instances developed from other geo information

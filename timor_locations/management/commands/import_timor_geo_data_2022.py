@@ -1,4 +1,3 @@
-import csv
 import os
 from importlib import resources
 
@@ -29,7 +28,7 @@ class Command(BaseCommand):
 
         lm = LayerMapping(Aldeia, ds, aldeia_mapping)
         self.stdout.write(self.style.SUCCESS("Saving aldeias from the gpkg file"))
-        # lm.save()
+        lm.save()
 
         self.stdout.write(self.style.SUCCESS("Adding admin posts and municipalities"))
 

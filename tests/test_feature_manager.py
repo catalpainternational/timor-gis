@@ -1,9 +1,9 @@
 from django.db.models import QuerySet
 from django.test import TestCase
-
-from timor_locations.models import Municipality
 from geojson_pydantic import Feature
+
 from tests.factories import AreaFactory  # type: ignore
+from timor_locations.models import Municipality
 
 
 class FeatureManagerTests(TestCase):

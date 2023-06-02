@@ -3,6 +3,8 @@
 Timor Leste GIS data as Django models
 This initial release uses administrative boundariew from Estrada, tweaked to include Atauro as a separate entity, with pcode which are intended to match existing data from PNDS.
 
+Data inputs are stored as `gpkg` files in Git LFS.
+
 ## Environment
 
 This is intended to be compatible with:
@@ -15,6 +17,10 @@ gh repo clone catalpainternational/timor_locations
 cd timor_locations
 poetry install
 ```
+
+### Development
+
+ - When developing please install prerequisites with `poetry install --with dev --no-root`
 
 ### Pre Commit
 

@@ -23,7 +23,7 @@ exclude = ['migrations']
 
 [tool.poetry]
 name = "timor-locations"
-version = "0.0.1"
+version = "0.0.8"
 description = "Timor-Leste geographic datasets"
 authors = [
   "Joshua Brooks <josh@catalpa.io>",
@@ -59,6 +59,13 @@ pytest-cov = "*"
 factory-boy = "*"
 ruff = "^0.0.269"
 django-extensions = "^3.2.1"
+
+[tool.poetry.group.topology]
+optional = true
+
+[tool.poetry.group.topology.dependencies]
+topojson = "^1.5"
+geojson = {git = "https://github.com/jazzband/geojson.git", rev = "main"}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

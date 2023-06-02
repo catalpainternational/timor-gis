@@ -1,5 +1,6 @@
-from django.db import connection
 from django.core.management.base import BaseCommand
+from django.db import connection
+
 
 class Command(BaseCommand):
     help = "Create or update topology entries in the database"

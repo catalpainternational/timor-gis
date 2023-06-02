@@ -1,4 +1,10 @@
-import topojson
+try:
+    import topojson
+except ModuleNotFoundError as E:
+    raise ModuleNotFoundError(
+        "You may need to install the optional `topology` group: `poetry install --only topology`"
+    ) from E
+
 from django.core.management.base import BaseCommand
 
 from timor_locations.models import TimorGeoArea, TopoJson

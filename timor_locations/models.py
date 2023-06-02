@@ -81,15 +81,13 @@ class TimorGeoArea(DateStampedModel):
         return MultiPolygon.construct(**json.loads(self.geojson))
 
     def as_feature(self):
-        properties = dict(name = self.name, id=self.pcode, kind=self._meta.model_name)
+        properties = dict(name=self.name, id=self.pcode, kind=self._meta.model_name)
 
         for optional in ("adminpost_id", "municipality_id", "adminpost_name", "municipality_name"):
             if hasattr(self, optional):
                 properties[optional] = getattr(self, optional)
-            
-        return Feature.construct(
-            type="Feature", id=self.pcode, properties=properties, geometry=self.as_multipolygon()
-        )
+
+        return Feature.construct(type="Feature", id=self.pcode, properties=properties, geometry=self.as_multipolygon())
 
     @classmethod
     def all_features(cls, **kwargs) -> FeatureCollection:
@@ -108,6 +106,7 @@ class TimorGeoArea(DateStampedModel):
     @classmethod
     def topology(cls):
         import topojson
+
         return topojson.Topology(cls.all_features().json())
 
 

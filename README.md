@@ -5,6 +5,31 @@ This initial release uses administrative boundariew from Estrada, tweaked to inc
 
 Data inputs are stored as `gpkg` files in Git LFS.
 
+## Syncing a new provider boundary drop
+
+Provider datasets (Estrada, INTL/PNDS, ...) arrive in different CRS, field
+schemas, code schemes, spellings and coverage. `sync_provider_geo` folds a drop
+into the canonical importer data **without moving stable pcodes** (which exist to
+match PNDS downstream). Suco identity is decided by *polygon overlap*, not names,
+so respellings, re-parentings and duplicate names can't shift a code; anything
+the provider introduces gets a freshly minted canonical code.
+
+```sh
+# 1. propose: reconcile against the current sukus.csv/gpkg, write the crosswalk + report
+manage.py sync_provider_geo intl2024 --source /path/to/shapefiles --propose
+
+# review timor_locations/data/crosswalk/sync_report.md; record any corrections
+# in suco_overrides.csv (durable -- honoured verbatim on every re-run)
+
+# 2. apply: regenerate sukus.gpkg + sukus.csv from the reviewed crosswalk
+manage.py sync_provider_geo intl2024 --source /path/to/shapefiles --apply
+```
+
+`--apply` runs a hard **geographic guard** first: every suco must sit inside its
+coded admin-post polygon, or the sync aborts. Provider configuration lives in
+`timor_locations/sync/adapters.py`; the durable crosswalk + overrides + report
+live under `timor_locations/data/crosswalk/`.
+
 ## Environment
 
 This is intended to be compatible with:
@@ -49,6 +74,14 @@ See `build.yaml` for details on release tagging
   `GeoDataManager`, avoiding `FOR UPDATE cannot be applied to the nullable side of
   an outer join` (the manager annotates a nullable FK join that the
   `update_or_create` / `get_or_create` locking SELECT can't lock). Data unchanged.
+- Reconciled the suco dataset against the **INTL 2024** boundary set (via PNDS):
+  442 -> **466 sucos** (15 JDR 2025/26 sub-divisions + 12 previously-missing
+  sucos), all boundaries refreshed, **6 new admin posts** (Matebian, Quelicai
+  Antigo, Hatulia B, Loes, Lore, Barique), and ~87 sucos re-pointed to their
+  correct current admin post. Stable pcodes preserved throughout.
+- Added the `sync_provider_geo` pipeline + versioned crosswalk (see above).
+- Known gap: suco **Beduku** (Liquiçá/Bazartete) is absent from the INTL 2024
+  source and is not yet included.
 
 ...
 

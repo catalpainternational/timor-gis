@@ -1,0 +1,11 @@
+provider,provider_code,canonical_pcode,canonical_name,status,note
+intl2024,110501,110106,Ailili,matched,same-name swap: geometry split Ailili/Laicore; re-pair by name
+intl2024,110203,,,new,Laicore is genuinely new (Group B); freed from Ailili
+intl2024,010108,20106,Lauisi,matched,same-name swap: Lauisi==canonical Lausi; Lequitura is new
+intl2024,010109,,,new,Lequitura is genuinely new (Group B); freed from Lausi
+intl2024,140506,130409,Maluru,matched,same-name swap: boundary moved past overlap; re-pair Maluru
+intl2024,060701,50704,Fatuleto,matched,Zumalai swap: Fatuleto==canonical Fatuleto (identical suco set)
+intl2024,060702,50706,Lepo,matched,Zumalai swap: Lepo==canonical Lepo (identical suco set)
+intl2024,060601,50601,Beiseuc,rename,Tilomar: Foholulic renamed Beiseuc (same suco count)
+intl2024,070303,60302,Wenunuk,rename,Metinaro: Duyung (Sereia) renamed Wenunuk; Mantelolao is new
+intl2024,080109,70409,Malabe,rename,Atsabe: Atadame/Malabe renamed Malabe (Atadame absent from INTL)

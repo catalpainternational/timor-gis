@@ -1,475 +1,90 @@
-# Aldeia sync changeset (proposed)
+# Aldeia sync changeset (geometry-preserving)
 
-- INTL: **2238**  canonical: **2230**  |  added **214**, removed **206**, reparented **46**
+- emitted **2238** aldeias | continuing **2024**, reclaimed-stable-code **121**, new **93**, removed **85**
 
-## Added (in INTL, not in current gpkg)
-- 01010704 Lahae
-- 01010705 Riatelo
-- 01010904 Erluli
-- 01011107 Lio
-- 01011108 Raicolefa
-- 01011109 Tabulasi
-- 01011110 Talifurleu
-- 01011301 Banderahun
-- 01011302 Coulaudo
-- 01011303 Fatubessi
-- 01011304 Fatulmau
-- 01011305 Laclo
-- 01011306 Quirilelo
-- 01011307 Raimanso
-- 01011308 Rairema
-- 01040604 Sumir
-- 01040901 Aicurus
-- 01040902 Dacilelo
-- 01040903 Roluli
-- 01040904 Samalete
-- 04020806 Uaibehana
-- 04020807 Uatu-Ua
-- 04020808 Uaturau
-- 04021005 Umaquerek
-- 04021201 Aubaca
-- 04021202 Bado-Ho'o
-- 04021203 Lequiloi Uato
-- 04021204 Macadai
-- 04021301 Afacaimau
-- 04021302 Afagua
-- 04021303 Alala
-- 04021304 Ledatame
-- 04021305 Manulai
-- 04021306 Samalaculiba
-- 04021307 Uaimanuboe
-- 04021308 Uatubala
-- 04021309 Uaturau De Baixo
-- 04021310 Uaturau De Cima
-- 04030901 Ueru Mata
-- 04050103 Saraida
-- 04051401 Lau-Mana
-- 04051402 Lebenei
-- 04051403 Manome
-- 04051404 Ruta
-- 04051405 Uaidora
-- 04051501 Bocilai
-- 04051502 Defadae
-- 04051503 Macalira
-- 04060305 Uadaboru
-- 04070101 Bahamori
-- 04070102 Caicua
-- 04070201 Caitaranau
-- 04070202 Nunuti
-- 04070203 Uaidau
-- 04070301 Caidenulale
-- 04070302 Hoineuai
-- 04070303 Lolinuno
-- 04070304 Uaicnassa
-- 04070305 Uma Ana Ico
-- 04070401 Bahamori
-- 04070402 Haunau
-- 04070403 Ostico
-- 04070501 Lari
-- 04070502 Mota
-- 04070601 Bahalale
-- 04070602 Naulale
-- 04070603 Uaiharabo'o
-- 04070701 Betulale
-- 04070702 Lor
-- 04070703 Oralan
-- 04070704 Raha
-- 04080101 Uaibobo
-- 04080102 Uaicana
-- 04080103 Cai-Ae-Tula/Uataula
-- 04080104 Uato-Bela Oli
-- 04080105 Uma Ana Ico
-- 04080201 Caimale-Ho'o
-- 04080202 Cumo-Oli
-- 04080203 Laco-Uma
-- 04080204 Lia-Oli
-- 04080205 Neo-Ho'o
-- 04080206 Uai-Toqui
-- 04080301 Bahadato
-- 04080302 Osso-Uaque
-- 04080303 Uai-To-Bono
-- 04080304 Uatulia-Ana
-- 04080401 Aca Uatu
-- 04080402 Luli-Bau
-- 04080403 Uai-Ae/Ualae
-- 04080404 Uatu Missa
-- 04080501 Caihurulale de Baixo
-- 04080502 Caihurulale de Cima
-- 04080503 Caubau
-- 04080504 Luha Oli
-- 04080601 Lia Bala
-- 04080602 Ossogori
-- 04080603 Uai-Talibu
-- 04080604 Uatu-Uasa
-- 04080701 Betunau
-- 04080702 Quele-Boro-Uai
-- 04080703 Uai-Te
-- 04080704 Uatu-Nau
-- 04080801 Caihula
-- 04080802 Nuno Doco
-- 04080803 Osso-Gui-Gui
-- 04080804 Venilale
-- 07050501 Aldeio 03
-- 08021006 Timlele Buras
-- 08021101 Gomhei
-- 08021102 Hatlour
-- 08021103 Mangero
-- 08021104 Raebliri
-- 08021105 Sasoher
-- 08021201 Bura
-- 08021202 Leberti
-- 08021203 Lima Mesak
-- 08021204 Moris Foun
-- 08021205 Nunusua
-- 08030504 Simohei
-- 08030603 Laquiama
-- 08030803 Hatete
-- 08030804 Lugulaulau
-- 08030805 Otete
-- 08030901 Petalara
-- 08030902 Railuli
-- 08050307 Rotutu
-- 08050308 Sabelo
-- 08050405 Olopana
-- 08050406 Taurema
-- 08050710 Raepusa
-- 08050711 Riamori
-- 08050712 Riatoni
-- 08050901 Alosai
-- 08050902 Grotu
-- 08050903 Hatugeo
-- 08050904 Lemiluhi
-- 08050905 Leubasa
-- 08050906 Liabe (lauana)
-- 08050907 Quiri Lelo
-- 08050908 Raebou/Ainapa
-- 08050909 Raebou/Sloi
-- 08050910 Roulo
-- 09050101 Horolata
-- 09050102 Maluru
-- 09050103 Otcho-Tchau
-- 09050104 Tchai
-- 09050105 Titilari
-- 09050106 Vailana
-- 09050201 Haitupuca
-- 09050202 Ililapa
-- 09050203 Nuhalata
-- 10040101 Cai-Cassa
-- 10040102 Dair
-- 10040103 Erito
-- 10040104 Lautecas
-- 10040105 Lauvou
-- 10040106 Lebulugor
-- 10040107 Lissa-Lara
-- 10040108 Palistla
-- 10040109 Puquelete
-- 10040110 Raenaba
-- 10040111 Vatumori
-- 10040401 Baiquenalau
-- 10040402 Darulema
-- 10040403 Lissalara
-- 10040404 Nunulete
-- 10040405 Vatuguili
-- 10040601 Bouraevei
-- 10040602 Gariana
-- 10040603 Lebucailiti
-- 10040604 Lissa-Ico
-- 10040605 Lissalara
-- 10040606 Manuquibia
-- 10040607 Mau-Ubu
-- 10040608 Raime
-- 10040609 Samanaro
-- 10040610 Vatu-Nau
-- 10040701 Darulara
-- 10040702 Delesuvati
-- 10040703 Lebumeta
-- 10040704 Morae
-- 10040705 Nunuana
-- 10040706 Pametapu
-- 10040707 Vila
-- 12010505 Manus
-- 12010601 Baria Laran
-- 12010602 Colocau
-- 12010603 Culuhun
-- 12010604 Uma Feric
-- 13030504 Usapibela
-- 13030901 Bausiu
-- 13030902 Sacato
-- 13031001 Hauboni
-- 13031002 Maquelab
-- 13031003 Nemun
-- 13031004 Ulas
-- 14030506 Quetorai
-- 14030608 Mauseloc
-- 14030609 Tatilari
-- 14030610 Uani Uma
-- 14030611 Uasufa
-- 14030612 Ulusu
-- 14030701 Fohomano
-- 14030702 Macadique
-- 14030703 Rai Laa
-- 14030704 Sana
-- 14030705 Uma Qui Ic
-- 14030801 Baha-o
-- 14030802 Bahabuga
-- 14030803 Balabasiba
-- 14030804 Culudere
-- 14030805 Matau
-- 14030806 Mauboro
-- 14030807 Uani Uma
-
-## Removed (in current gpkg, not in INTL -- supersession or deletion)
-- 01010605 Riatelo
-- 01010804 Erluli
-- 01011004 Faularan
-- 01011005 Halalmeta
-- 01011006 Leubraudo
-- 01011007 Lio
-- 01011008 Raicolefa
-- 01011009 Tabulasi
-- 01011010 Talifurleu
-- 01011205 Laclo
-- 01011206 Quirilelo
-- 01011207 Raimanso
-- 01011208 Rairema
-- 01040103 Leroliça
-- 01040804 Samalete
-- 04020303 Builai
+## Removed (canonical aldeia with no INTL continuation -- merged away)
+- 13030204 Oetpo
+- 13030403 Padiae
+- 13030205 Sanane
+- 13030203 Oesono
+- 13030604 Teinae
 - 04020304 Loidua
-- 04020305 Manulai
-- 04020306 Samalaculiba
-- 04020505 Haurobu
-- 04020506 Maulame
-- 04020507 Uani-Uma
 - 04020604 Garuai
-- 04020605 Maucale
-- 04020606 Uaibehana
-- 04020607 Uatu-Ua
-- 04020608 Uaturau
-- 04020905 Ossu-Ua
-- 04020906 Parlamento
-- 04021107 Uaimanuboe
-- 04021108 Uatubala
-- 04021109 Uaturau De Baixo
-- 04021110 Uaturau De Cima
-- 04030603 Lualari
-- 04030607 Ueru Mata
-- 04040101 Assa-Loqui
-- 04040102 Caranu
-- 04040103 Mumana
-- 04040104 Telaha
 - 04040301 Boralai
-- 04040302 Uligata
-- 04040303 Vecubuti
-- 04040401 Butileo
 - 04040402 Laua-Liu
-- 04040403 Saraida
-- 04040501 Lialura
-- 04040502 Osso-Messa
-- 04040601 Eu-Afa
-- 04040602 Fae-Ua
-- 04040603 Laculela
-- 04040604 Saebere
-- 04040605 Uadaboru
-- 04040701 Lacodala
-- 04040702 Mucububo
-- 04040703 Uaule
-- 04041101 Lau-Mana
-- 04041102 Lebenei
-- 04041103 Manome
-- 04041104 Ruta
-- 04041105 Uaidora
-- 04041201 Bocilai
-- 04041202 Defadae
-- 04041203 Macalira
-- 04041401 Cirilaco
-- 04041402 Daicou
-- 04041403 Loirae
 - 04041404 Ua-Sufa
 - 04041501 Caranu
+- 08020705 Sakoko
+- 08030304 Manucate
+- 01011004 Faularan
+- 01011006 Leubraudo
+- 01011005 Halalmeta
+- 01040103 Leroliça
+- 12010404 Mahaklusin
+- 12010304 Tahu Bein
+- 08020612 Urluli
+- 08020607 Rematu
+- 08020609 Taklela
+- 08020606 Poepun
+- 08020610 Tidibessi
+- 08020608 Samatrae
+- 08020805 Rai Maran
+- 08020804 Nazare
+- 08020611 Urletoho
+- 08030306 Raegoa
+- 08030307 Teuro
+- 08030305 Manulete
+- 08050107 Tunufahi
+- 08050208 Lebululi
+- 08050210 Raerema
+- 08050211 Renomata
+- 08050209 Manusae
+- 08050607 Kairia
+- 08050609 Manukati Leten
+- 08050608 Lutlala
+- 08050505 Rialau
+- 08050506 Sauria
+- 04020505 Haurobu
+- 04020506 Maulame
+- 04020905 Ossu-Ua
+- 04020906 Parlamento
+- 04020303 Builai
+- 04020305 Manulai
+- 04020605 Maucale
+- 04020507 Uani-Uma
+- 04030603 Lualari
+- 04040102 Caranu
+- 04040502 Osso-Messa
+- 04040401 Butileo
+- 04040302 Uligata
+- 04040303 Vecubuti
+- 04040103 Mumana
+- 04040104 Telaha
+- 04040101 Assa-Loqui
+- 04041401 Cirilaco
+- 04041403 Loirae
+- 04041402 Daicou
+- 04040603 Laculela
+- 04040601 Eu-Afa
+- 04040604 Saebere
+- 04040602 Fae-Ua
 - 04041502 Gamana
 - 04041503 Gugulai
 - 04041504 Sialimo
-- 04050203 Uaidau
-- 04050304 Uaicnassa
-- 04050305 Uma Ana Ico
-- 04050401 Bahamori
-- 04050402 Haunau
-- 04050403 Ostico
-- 04050501 Lari
-- 04050502 Mota
-- 04050601 Bahalale
-- 04050602 Naulale
-- 04050603 Uaiharabo'o
-- 04050701 Betulale
-- 04050702 Lor
-- 04050703 Oralan
-- 04050704 Raha
-- 04060105 Uma Ana Ico
-- 04060204 Lia-Oli
-- 04060205 Neo-Ho'o
-- 04060206 Uai-Toqui
-- 04060601 Lia Bala
-- 04060602 Ossogori
-- 04060603 Uai-Talibu
-- 04060604 Uatu-Uasa
-- 04060701 Betunau
-- 04060702 Quele-Boro-Uai
-- 04060703 Uai-Te
-- 04060704 Uatu-Nau
-- 04060801 Caihula
-- 04060802 Nuno Doco
-- 04060803 Osso-Gui-Gui
-- 04060804 Venilale
-- 08020606 Poepun
-- 08020607 Rematu
-- 08020608 Samatrae
-- 08020609 Taklela
-- 08020610 Tidibessi
-- 08020611 Urletoho
-- 08020612 Urluli
-- 08020705 Sakoko
-- 08020804 Nazare
-- 08020805 Rai Maran
-- 08020806 Timlele Buras
-- 08030304 Manucate
-- 08030305 Manulete
-- 08030306 Raegoa
-- 08030307 Teuro
-- 08030703 Hatete
-- 08030704 Lugulaulau
-- 08030705 Otete
-- 08050106 Raebou
-- 08050107 Tunufahi
-- 08050208 Lebululi
-- 08050209 Manusae
-- 08050210 Raerema
-- 08050211 Renomata
-- 08050212 Rotutu
-- 08050213 Sabelo
-- 08050505 Rialau
-- 08050506 Sauria
-- 08050607 Kairia
-- 08050608 Lutlala
-- 08050609 Manukati Leten
-- 08050610 Raepusa
-- 08050611 Riamori
-- 08050612 Riatoni
-- 08050810 Roulo
-- 09050601 Horolata
-- 09050602 Maluru
-- 09050603 Otcho-Tchau
-- 09050604 Tchai
-- 09050605 Titilari
-- 09050606 Vailana
-- 09050701 Haitupuca
-- 09050702 Ililapa
-- 09050703 Nuhalata
-- 10030101 Cai-Cassa
-- 10030102 Dair
-- 10030103 Erito
-- 10030104 Lautecas
-- 10030105 Lauvou
-- 10030106 Lebulugor
-- 10030107 Lissa-Lara
-- 10030108 Palistla
-- 10030109 Puquelete
-- 10030110 Raenaba
-- 10030111 Vatumori
-- 10030401 Baiquenalau
-- 10030402 Darulema
-- 10030403 Lissalara
-- 10030404 Nunulete
-- 10030405 Vatuguili
-- 10030601 Bouraevei
-- 10030602 Gariana
-- 10030603 Lebucailiti
-- 10030604 Lissa-Ico
-- 10030605 Lissalara
-- 10030606 Manuquibia
-- 10030607 Mau-Ubu
-- 10030608 Raime
-- 10030609 Samanaro
-- 10030610 Vatu-Nau
-- 10030701 Darulara
-- 10030702 Delesuvati
-- 10030703 Lebumeta
-- 10030704 Morae
-- 10030705 Nunuana
-- 10030706 Pametapu
-- 10030707 Vila
-- 12010304 Tahu Bein
-- 12010404 Mahaklusin
-- 12010405 Manus
-- 13030203 Oesono
-- 13030204 Oetpo
-- 13030205 Sanane
-- 13030403 Padiae
-- 13030404 Usapibela
-- 13030604 Teinae
-- 14030308 Coquilaco
-- 14030309 Daralari
-- 14030310 Digamasi
-- 14030311 Edemumo
-- 14030312 Lacarate
-- 14030313 Lau-Uma
+- 04040703 Uaule
+- 04040701 Lacodala
+- 04040702 Mucububo
+- 04040501 Lialura
 - 14030314 Liacaiua
-- 14030315 Luroboro
-- 14030316 Lutuguia
-- 14030317 Macadique
-- 14030318 Mata Dalan
+- 14030309 Daralari
 - 14030319 Namanei
+- 14030317 Macadique
+- 14030311 Edemumo
 - 14030320 Ossolari
-- 14030321 Quetorai
-- 14030409 Tatilari
-- 14030410 Uani Uma
-- 14030411 Uasufa
-- 14030412 Ulusu
-
-## Reparented (NewSucoCod changed)
-- 07050105 Foho Rai Boot: 070505 -> 070501
-- 08050201 Duhoho: 080502 -> 080503
-- 08050202 Fahiluha: 080502 -> 080503
-- 08050203 Hohulo: 080502 -> 080503
-- 08050204 Lumutou: 080502 -> 080503
-- 08050205 Merique: 080502 -> 080503
-- 08050206 Raebou: 080502 -> 080503
-- 08050207 Tunufahi: 080502 -> 080503
-- 08050301 Laclo: 080503 -> 080504
-- 08050302 Lebudu: 080503 -> 080504
-- 08050303 Lebululi: 080503 -> 080504
-- 08050304 Manusae: 080503 -> 080504
-- 08050305 Raerema: 080503 -> 080504
-- 08050306 Renomata: 080503 -> 080504
-- 08050401 Darudu: 080504 -> 080505
-- 08050402 Goulala: 080504 -> 080505
-- 08050403 Lequi Sala: 080504 -> 080505
-- 08050404 Madede: 080504 -> 080505
-- 08050501 Beturema Goulolo: 080505 -> 080506
-- 08050502 Cailiti: 080505 -> 080506
-- 08050503 Goulala: 080505 -> 080506
-- 08050504 Goulolo: 080505 -> 080506
-- 08050601 Cailiti: 080506 -> 080507
-- 08050602 Hatugau: 080506 -> 080507
-- 08050603 Hunda: 080506 -> 080507
-- 08050604 Riaheu: 080506 -> 080507
-- 08050605 Rialau: 080506 -> 080507
-- 08050606 Sauria: 080506 -> 080507
-- 08050701 Assi: 080507 -> 080508
-- 08050702 Beturema Haupu: 080507 -> 080508
-- 08050703 Duhoho (Haupu): 080507 -> 080508
-- 08050704 Hatuhou: 080507 -> 080508
-- 08050705 Hauleo: 080507 -> 080508
-- 08050706 Haupu: 080507 -> 080508
-- 08050707 Kairia: 080507 -> 080508
-- 08050708 Lutlala: 080507 -> 080508
-- 08050709 Manukati Leten: 080507 -> 080508
-- 08050801 Baulisuria: 080508 -> 080502
-- 08050802 Colo Coli: 080508 -> 080502
-- 08050803 Hatudmei: 080508 -> 080502
-- 08050804 Hatugeo: 080508 -> 080502
-- 08050805 Hatulete: 080508 -> 080502
-- 08050806 Leburema: 080508 -> 080502
-- 08050807 Manturai: 080508 -> 080502
-- 08050808 Manucoliria: 080508 -> 080502
-- 08050809 Mausormata: 080508 -> 080502
+- 14030312 Lacarate
+- 14030308 Coquilaco
+- 14030313 Lau-Uma
+- 14030316 Lutuguia
+- 14030310 Digamasi
+- 14030318 Mata Dalan
+- 14030315 Luroboro

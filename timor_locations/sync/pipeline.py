@@ -327,58 +327,114 @@ def validate_containment(intl_sucos, intl_posts):
 ALDEIA_FIELDS = ["ALDEIA", "SUCO", "P_ADMIN", "MUNICIPIO", "NewAldCode", "NewSucoCod", "NewPostAdC", "NewMunCode"]
 
 
-def aldeia_diff(source_dir, spec, canonical_gpkg):
-    """Diff INTL aldeias against the current aldeias_2022.gpkg by NewAldCode.
+def reconcile_aldeia_codes(source_dir, spec, canonical_gpkg):
+    """Decide each INTL aldeia's emitted NewAldCode so continuing aldeias keep their
+    *existing* code (stable id), and only genuinely-new aldeias take a fresh one.
 
-    Both vintages use the INTL scheme, so the code is the join key. Reports
-    added / removed / reparented (NewSucoCod changed) for review. Codes are partly
-    recoded between vintages, so 'removed' may be supersessions rather than true
-    deletions -- hence a report, not a silent overwrite.
+    Same scheme on both sides, so identity is: (1) exact NewAldCode match keeps its
+    code; (2) an INTL aldeia whose code is absent from canonical is geometry-matched
+    to a canonical aldeia whose code is absent from INTL (a recode) and reclaims that
+    stable code; (3) anything left is genuinely new and keeps its INTL code.
+
+    Returns (code_map: {intl_code -> emitted_code}, stats).
     """
-    intl = DataSource(str(Path(source_dir) / spec.layer_file))[0]
-    canon = DataSource(str(canonical_gpkg))[0]
-    intl_map = {str(f.get("NewAldCode")): (str(f.get("ALDEIA")), str(f.get("NewSucoCod"))) for f in intl}
-    canon_map = {str(f.get("NewAldCode")): (str(f.get("ALDEIA")), str(f.get("NewSucoCod"))) for f in canon}
-    added = sorted(set(intl_map) - set(canon_map))
-    removed = sorted(set(canon_map) - set(intl_map))
-    reparented = sorted(k for k in set(intl_map) & set(canon_map) if intl_map[k][1] != canon_map[k][1])
-    return {
-        "intl_count": len(intl_map),
-        "canon_count": len(canon_map),
-        "added": [(k, intl_map[k][0]) for k in added],
-        "removed": [(k, canon_map[k][0]) for k in removed],
-        "reparented": [(k, intl_map[k][0], canon_map[k][1], intl_map[k][1]) for k in reparented],
+    intl = read_layer(source_dir, spec)
+    intl_codes = {f.code for f in intl}
+    layer = DataSource(str(canonical_gpkg))[0]
+    canon = [(str(feat.get("NewAldCode")), str(feat.get("ALDEIA")), feat.geom.geos) for feat in layer]
+    canon_codes = {c for c, _, _ in canon}
+
+    code_map = {f.code: f.code for f in intl if f.code in canon_codes}  # (1) continuing
+
+    canon_only = [(c, n, g, g.area, g.extent) for c, n, g in canon if c not in intl_codes]
+    intl_only = []
+    for f in intl:
+        if f.code in canon_codes:
+            continue
+        g = f.geom_src.clone()
+        g.transform(SpatialReference(WGS84))
+        gg = g.geos
+        intl_only.append((f.code, f.name, gg, gg.extent))
+
+    def bbox_hit(a, b):
+        return not (a[2] < b[0] or b[2] < a[0] or a[3] < b[1] or b[3] < a[1])
+
+    pair_score = {}
+    for icode, iname, ig, iext in intl_only:
+        for ccode, cname, cg, carea, cext in canon_only:
+            if not bbox_hit(iext, cext) or not ig.intersects(cg):
+                continue
+            inter = ig.intersection(cg).area
+            if inter <= 0:
+                continue
+            pair_score[(icode, ccode)] = score_pair(iname, cname) + OVERLAP_WEIGHT * (
+                inter / carea if carea else 0
+            )
+
+    reclaimed, taken = 0, set()
+    for (icode, ccode), s in sorted(pair_score.items(), key=lambda kv: kv[1], reverse=True):
+        if s < MATCH_FLOOR or icode in code_map or ccode in taken:
+            continue
+        code_map[icode] = ccode  # (2) reclaim the stable canonical code
+        taken.add(ccode)
+        reclaimed += 1
+    new = 0
+    for f in intl:
+        if f.code not in code_map:
+            code_map[f.code] = f.code  # (3) genuinely new
+            new += 1
+    stats = {
+        "intl": len(intl),
+        "continuing": len(intl) - len(intl_only),
+        "reclaimed": reclaimed,
+        "new": new,
+        "removed": [(c, n) for c, n, *_ in canon_only if c not in taken],
     }
+    return code_map, stats
 
 
-def emit_aldeias(source_dir, spec, out_path):
-    """Emit aldeias_2022.gpkg straight from the INTL aldeia layer: reproject to
-    EPSG:4326, promote to MULTIPOLYGON, keep the fields the importer reads."""
+def emit_aldeias(source_dir, spec, out_path, code_map=None):
+    """Emit aldeias_2022.gpkg from the INTL aldeia layer: reproject to EPSG:4326,
+    promote to MULTIPOLYGON, keep the importer's fields. If ``code_map`` is given,
+    each feature's NewAldCode is remapped to its resolved (stable) code."""
+    import json
     import subprocess
+    import tempfile
 
-    src = str(Path(source_dir) / spec.layer_file)
     out_path = Path(out_path)
     out_path.unlink(missing_ok=True)
+
+    if code_map is None:  # wholesale adopt (no preservation)
+        src = str(Path(source_dir) / spec.layer_file)
+        subprocess.run(
+            ["ogr2ogr", "-f", "GPKG", str(out_path), src, "-t_srs", "EPSG:4326", "-nlt", "MULTIPOLYGON",
+             "-nln", "aldeias_2022", "-lco", "GEOMETRY_NAME=geom", "-select", ",".join(ALDEIA_FIELDS)],
+            check=True,
+        )
+        return
+
+    layer = DataSource(str(Path(source_dir) / spec.layer_file))[0]
+    features = []
+    for feat in layer:
+        props = {f: feat.get(f) for f in ALDEIA_FIELDS}
+        props["NewAldCode"] = code_map.get(str(feat.get("NewAldCode")), str(feat.get("NewAldCode")))
+        features.append(
+            {"type": "Feature", "properties": props, "geometry": json.loads(to_multipolygon_4326(feat.geom).json)}
+        )
+    fc = {
+        "type": "FeatureCollection",
+        "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::4326"}},
+        "features": features,
+    }
+    with tempfile.NamedTemporaryFile("w", suffix=".geojson", delete=False) as tmp:
+        json.dump(fc, tmp)
+        tmp_path = tmp.name
     subprocess.run(
-        [
-            "ogr2ogr",
-            "-f",
-            "GPKG",
-            str(out_path),
-            src,
-            "-t_srs",
-            "EPSG:4326",
-            "-nlt",
-            "MULTIPOLYGON",
-            "-nln",
-            "aldeias_2022",
-            "-lco",
-            "GEOMETRY_NAME=geom",
-            "-select",
-            ",".join(ALDEIA_FIELDS),
-        ],
+        ["ogr2ogr", "-f", "GPKG", str(out_path), tmp_path, "-nln", "aldeias_2022", "-nlt", "MULTIPOLYGON",
+         "-lco", "GEOMETRY_NAME=geom", "-a_srs", "EPSG:4326"],
         check=True,
     )
+    Path(tmp_path).unlink(missing_ok=True)
 
 
 # --- emit (importer schema) -----------------------------------------------------

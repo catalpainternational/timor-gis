@@ -118,30 +118,27 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Emitted {CSV} and {GPKG} ({len(rows)} sucos)"))
 
     def _handle_aldeia(self, provider, src, opts):
-        """Aldeias are already on the INTL 'new' code scheme, so this is an
-        authoritative refresh keyed on NewAldCode (no old<->new bridge)."""
+        """Geometry-preserving aldeia refresh: continuing aldeias keep their existing
+        NewAldCode (so downstream upsert/refresh is clean), only new ones take a fresh
+        code. Matched against the *current* aldeias_2022.gpkg as the canonical baseline."""
         spec = provider.levels["aldeia"]
-        d = P.aldeia_diff(src, spec, ALDEIA_GPKG)
+        code_map, st = P.reconcile_aldeia_codes(src, spec, ALDEIA_GPKG)
         self.stdout.write(
             self.style.SUCCESS(
-                f"INTL aldeias={d['intl_count']} canon={d['canon_count']} | "
-                f"added={len(d['added'])} removed={len(d['removed'])} reparented={len(d['reparented'])}"
+                f"aldeias={st['intl']} | continuing(exact)={st['continuing']} "
+                f"reclaimed(recode->stable)={st['reclaimed']} new={st['new']} removed={len(st['removed'])}"
             )
         )
-        lines = ["# Aldeia sync changeset (proposed)", ""]
+        lines = ["# Aldeia sync changeset (geometry-preserving)", ""]
         lines.append(
-            f"- INTL: **{d['intl_count']}**  canonical: **{d['canon_count']}**  |  "
-            f"added **{len(d['added'])}**, removed **{len(d['removed'])}**, reparented **{len(d['reparented'])}**"
+            f"- emitted **{st['intl']}** aldeias | continuing **{st['continuing']}**, "
+            f"reclaimed-stable-code **{st['reclaimed']}**, new **{st['new']}**, removed **{len(st['removed'])}**"
         )
-        lines.append("\n## Added (in INTL, not in current gpkg)")
-        lines += [f"- {code} {name}" for code, name in d["added"]]
-        lines.append("\n## Removed (in current gpkg, not in INTL -- supersession or deletion)")
-        lines += [f"- {code} {name}" for code, name in d["removed"]]
-        lines.append("\n## Reparented (NewSucoCod changed)")
-        lines += [f"- {code} {name}: {old} -> {new}" for code, name, old, new in d["reparented"]]
+        lines.append("\n## Removed (canonical aldeia with no INTL continuation -- merged away)")
+        lines += [f"- {code} {name}" for code, name in st["removed"]]
         ALDEIA_REPORT.write_text("\n".join(lines))
         self.stdout.write(self.style.SUCCESS(f"Wrote {ALDEIA_REPORT}"))
 
         if opts["apply"]:
-            P.emit_aldeias(src, spec, ALDEIA_GPKG)
-            self.stdout.write(self.style.SUCCESS(f"Emitted {ALDEIA_GPKG} ({d['intl_count']} aldeias)"))
+            P.emit_aldeias(src, spec, ALDEIA_GPKG, code_map=code_map)
+            self.stdout.write(self.style.SUCCESS(f"Emitted {ALDEIA_GPKG} ({st['intl']} aldeias)"))

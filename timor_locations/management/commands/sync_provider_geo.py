@@ -35,6 +35,8 @@ GPKG = DATA / "sukus.gpkg"
 XWALK = DATA / "crosswalk" / "suco_crosswalk.csv"
 OVERRIDES = DATA / "crosswalk" / "suco_overrides.csv"
 REPORT = DATA / "crosswalk" / "sync_report.md"
+ALDEIA_GPKG = DATA / "aldeias_2022.gpkg"
+ALDEIA_REPORT = DATA / "crosswalk" / "aldeia_sync_report.md"
 
 
 def _load_overrides(provider_key):
@@ -52,14 +54,17 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("provider", choices=sorted(PROVIDERS), help="provider key (see adapters.py)")
         parser.add_argument("--source", required=True, help="directory holding the provider shapefiles")
+        parser.add_argument("--level", choices=["suco", "aldeia"], default="suco", help="which level to sync")
         parser.add_argument("--propose", action="store_true", help="write crosswalk + report only")
-        parser.add_argument("--apply", action="store_true", help="emit sukus.gpkg + sukus.csv")
+        parser.add_argument("--apply", action="store_true", help="emit the importer gpkg/csv")
 
     def handle(self, *args, **opts):
         if not (opts["propose"] or opts["apply"]):
             raise CommandError("choose --propose and/or --apply")
         provider = PROVIDERS[opts["provider"]]
         src = opts["source"]
+        if opts["level"] == "aldeia":
+            return self._handle_aldeia(provider, src, opts)
 
         self.stdout.write("Reading provider layers...")
         intl_posts = P.read_layer(src, provider.levels["post"])
@@ -111,3 +116,32 @@ class Command(BaseCommand):
             P.emit_csv(rows, CSV)
             P.emit_gpkg(rows, intl_sucos, GPKG)
             self.stdout.write(self.style.SUCCESS(f"Emitted {CSV} and {GPKG} ({len(rows)} sucos)"))
+
+    def _handle_aldeia(self, provider, src, opts):
+        """Aldeias are already on the INTL 'new' code scheme, so this is an
+        authoritative refresh keyed on NewAldCode (no old<->new bridge)."""
+        spec = provider.levels["aldeia"]
+        d = P.aldeia_diff(src, spec, ALDEIA_GPKG)
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"INTL aldeias={d['intl_count']} canon={d['canon_count']} | "
+                f"added={len(d['added'])} removed={len(d['removed'])} reparented={len(d['reparented'])}"
+            )
+        )
+        lines = ["# Aldeia sync changeset (proposed)", ""]
+        lines.append(
+            f"- INTL: **{d['intl_count']}**  canonical: **{d['canon_count']}**  |  "
+            f"added **{len(d['added'])}**, removed **{len(d['removed'])}**, reparented **{len(d['reparented'])}**"
+        )
+        lines.append("\n## Added (in INTL, not in current gpkg)")
+        lines += [f"- {code} {name}" for code, name in d["added"]]
+        lines.append("\n## Removed (in current gpkg, not in INTL -- supersession or deletion)")
+        lines += [f"- {code} {name}" for code, name in d["removed"]]
+        lines.append("\n## Reparented (NewSucoCod changed)")
+        lines += [f"- {code} {name}: {old} -> {new}" for code, name, old, new in d["reparented"]]
+        ALDEIA_REPORT.write_text("\n".join(lines))
+        self.stdout.write(self.style.SUCCESS(f"Wrote {ALDEIA_REPORT}"))
+
+        if opts["apply"]:
+            P.emit_aldeias(src, spec, ALDEIA_GPKG)
+            self.stdout.write(self.style.SUCCESS(f"Emitted {ALDEIA_GPKG} ({d['intl_count']} aldeias)"))

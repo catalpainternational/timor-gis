@@ -322,6 +322,65 @@ def validate_containment(intl_sucos, intl_posts):
     return offenders
 
 
+# --- aldeia track (already on the INTL "new" code scheme) -----------------------
+
+ALDEIA_FIELDS = ["ALDEIA", "SUCO", "P_ADMIN", "MUNICIPIO", "NewAldCode", "NewSucoCod", "NewPostAdC", "NewMunCode"]
+
+
+def aldeia_diff(source_dir, spec, canonical_gpkg):
+    """Diff INTL aldeias against the current aldeias_2022.gpkg by NewAldCode.
+
+    Both vintages use the INTL scheme, so the code is the join key. Reports
+    added / removed / reparented (NewSucoCod changed) for review. Codes are partly
+    recoded between vintages, so 'removed' may be supersessions rather than true
+    deletions -- hence a report, not a silent overwrite.
+    """
+    intl = DataSource(str(Path(source_dir) / spec.layer_file))[0]
+    canon = DataSource(str(canonical_gpkg))[0]
+    intl_map = {str(f.get("NewAldCode")): (str(f.get("ALDEIA")), str(f.get("NewSucoCod"))) for f in intl}
+    canon_map = {str(f.get("NewAldCode")): (str(f.get("ALDEIA")), str(f.get("NewSucoCod"))) for f in canon}
+    added = sorted(set(intl_map) - set(canon_map))
+    removed = sorted(set(canon_map) - set(intl_map))
+    reparented = sorted(k for k in set(intl_map) & set(canon_map) if intl_map[k][1] != canon_map[k][1])
+    return {
+        "intl_count": len(intl_map),
+        "canon_count": len(canon_map),
+        "added": [(k, intl_map[k][0]) for k in added],
+        "removed": [(k, canon_map[k][0]) for k in removed],
+        "reparented": [(k, intl_map[k][0], canon_map[k][1], intl_map[k][1]) for k in reparented],
+    }
+
+
+def emit_aldeias(source_dir, spec, out_path):
+    """Emit aldeias_2022.gpkg straight from the INTL aldeia layer: reproject to
+    EPSG:4326, promote to MULTIPOLYGON, keep the fields the importer reads."""
+    import subprocess
+
+    src = str(Path(source_dir) / spec.layer_file)
+    out_path = Path(out_path)
+    out_path.unlink(missing_ok=True)
+    subprocess.run(
+        [
+            "ogr2ogr",
+            "-f",
+            "GPKG",
+            str(out_path),
+            src,
+            "-t_srs",
+            "EPSG:4326",
+            "-nlt",
+            "MULTIPOLYGON",
+            "-nln",
+            "aldeias_2022",
+            "-lco",
+            "GEOMETRY_NAME=geom",
+            "-select",
+            ",".join(ALDEIA_FIELDS),
+        ],
+        check=True,
+    )
+
+
 # --- emit (importer schema) -----------------------------------------------------
 
 

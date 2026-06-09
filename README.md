@@ -67,7 +67,7 @@ See `build.yaml` for details on release tagging
 
 ## Changelog
 
-### 0.1.0
+### 0.2.0
 
 **Re-keyed onto the INTL ("New*Cod") code scheme.** `pcode` is now a `CharField`
 (was integer) holding the official INTL code — `NewSucoCod` / `NewPostAdC` /

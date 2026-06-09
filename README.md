@@ -42,6 +42,14 @@ See `build.yaml` for details on release tagging
 
 ## Changelog
 
+### 0.0.9
+
+- Fixed `import_timor_geo_data` / `import_timor_geo_data_2022` for **Django 4.2+**:
+  the upserts now use the plain base manager instead of the annotated
+  `GeoDataManager`, avoiding `FOR UPDATE cannot be applied to the nullable side of
+  an outer join` (the manager annotates a nullable FK join that the
+  `update_or_create` / `get_or_create` locking SELECT can't lock). Data unchanged.
+
 ...
 
 

@@ -55,24 +55,27 @@ class Command(BaseCommand):
         for NewAldCode, NewSucoCod, NewPostAdC, NewMunCode, ALDEIA, SUCO, P_ADMIN, MUNICIPIO in names:
             print(NewAldCode, NewSucoCod, NewPostAdC, NewMunCode, ALDEIA, SUCO, P_ADMIN, MUNICIPIO)
 
+            # _base_manager (plain Manager): the default GeoDataManager annotates nullable
+            # FK joins, and get_or_create's locking SELECT then trips "FOR UPDATE cannot be
+            # applied to the nullable side of an outer join" on Django 4.2+.
             if NewMunCode not in ids:
-                municipality, _ = Municipality.objects.get_or_create(pcode=NewMunCode, name=MUNICIPIO)
+                municipality, _ = Municipality._base_manager.get_or_create(pcode=NewMunCode, name=MUNICIPIO)
                 ids.add(NewMunCode)
                 self.stdout.write(self.style.SUCCESS(f"ADDED {municipality}"))
 
             if NewPostAdC not in ids:
-                adminpost, _ = AdministrativePost.objects.get_or_create(
+                adminpost, _ = AdministrativePost._base_manager.get_or_create(
                     pcode=NewPostAdC, name=P_ADMIN, municipality_id=NewMunCode
                 )
                 ids.add(NewPostAdC)
                 self.stdout.write(self.style.SUCCESS(f"ADDED {adminpost}"))
 
             if NewSucoCod not in ids:
-                suco, _ = Suco.objects.get_or_create(pcode=NewSucoCod, name=SUCO, adminpost_id=NewPostAdC)
+                suco, _ = Suco._base_manager.get_or_create(pcode=NewSucoCod, name=SUCO, adminpost_id=NewPostAdC)
                 ids.add(NewSucoCod)
                 self.stdout.write(self.style.SUCCESS(f"ADDED {suco}"))
 
-            aldeia = Aldeia.objects.get(pcode=NewAldCode)
+            aldeia = Aldeia._base_manager.get(pcode=NewAldCode)
             aldeia.suco_id = NewSucoCod
             aldeia.save()
             ids.add(NewAldCode)

@@ -1,5 +1,5 @@
 try:
-    import topojson
+    import topojson  # type: ignore[import]
 except ModuleNotFoundError as E:
     raise ModuleNotFoundError(
         "You may need to install the optional `topology` group: `poetry install --only topology`"

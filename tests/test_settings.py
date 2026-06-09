@@ -78,7 +78,7 @@ WSGI_APPLICATION = "timor_locations.wsgi.application"
 
 
 # Temporary:
-# docker run --rm -p 49156:5432 --name=dird -e POSTGRES_PASSWORD=dird -e POSTGRES_DB=dird_db -e POSTGRES_USER=dird postgis/postgis:14-3.2 -c fsync=off -c shared_buffers=4096MB
+# docker run --rm -p 49156:5432 --name=dird -e POSTGRES_PASSWORD=dird -e POSTGRES_DB=dird_db -e POSTGRES_USER=dird postgis/postgis:14-3.2 -c fsync=off -c shared_buffers=4096MB  # noqa: E501
 DATABASES = {
     "default": {
         "ENGINE": "django.contrib.gis.db.backends.postgis",

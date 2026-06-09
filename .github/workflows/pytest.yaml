@@ -27,9 +27,12 @@ jobs:
         poetry run flake8 .
 
     - name: Install OS level dependencies
+      # always() so a lint failure in an earlier step can't skip this and leave
+      # pytest without GDAL (which surfaces as a confusing "Could not find GDAL").
+      if: always()
       run: |
           sudo apt-get update
-          sudo apt-get install binutils libproj-dev gdal-bin python3-psycopg2
+          sudo apt-get install -y binutils libproj-dev gdal-bin python3-psycopg2
 
     - name: Test with pytest
       if: always()

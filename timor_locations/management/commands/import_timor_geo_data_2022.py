@@ -23,7 +23,7 @@ class Command(BaseCommand):
 
         ds = DataSource(SOURCE_GEO)
 
-        # if Aldeia.objects.count() or Suco.objects.count() or AdministrativePost.objects.count() or Municipality.objects.count():
+        # if Aldeia.objects.count() or Suco.objects.count() or AdministrativePost.objects.count() or Municipality.objects.count():  # noqa: E501
         #     raise NotImplementedError("Please clear the tables before import")
 
         lm = LayerMapping(Aldeia, ds, aldeia_mapping)
@@ -90,10 +90,19 @@ class Command(BaseCommand):
             c.execute(
                 """
                 UPDATE timor_locations_suco sc
-                    SET geom = (SELECT st_multi(st_union(geom)) FROM timor_locations_aldeia a WHERE a.suco_id = sc.pcode);
+                    SET geom = (
+                        SELECT st_multi(st_union(geom)) FROM timor_locations_aldeia a
+                        WHERE a.suco_id = sc.pcode
+                    );
                 UPDATE timor_locations_administrativepost ap
-                    SET geom = (SELECT st_multi(st_union(geom)) FROM timor_locations_suco s WHERE s.adminpost_id = ap.pcode);
+                    SET geom = (
+                        SELECT st_multi(st_union(geom)) FROM timor_locations_suco s
+                        WHERE s.adminpost_id = ap.pcode
+                    );
                 UPDATE timor_locations_municipality m
-                    SET geom = (SELECT st_multi(st_union(geom)) FROM timor_locations_administrativepost ap WHERE ap.municipality_id = m.pcode);
+                    SET geom = (
+                        SELECT st_multi(st_union(geom)) FROM timor_locations_administrativepost ap
+                        WHERE ap.municipality_id = m.pcode
+                    );
                 """
             )

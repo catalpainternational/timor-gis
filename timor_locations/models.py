@@ -63,7 +63,12 @@ class TimorGeoArea(DateStampedModel):
     class Meta:
         abstract = True
 
-    pcode = models.IntegerField(primary_key=True)
+    # pcode is the INTL "New*Cod" code (zero-padded string, e.g. suco "010106",
+    # aldeia "08050104"). A CharField so leading zeros survive; it stays the PK.
+    pcode = models.CharField(max_length=12, primary_key=True)
+    # The superseded Estrada-era integer code, kept for traceability during the
+    # migration to the INTL scheme (NULL for entities that never had one).
+    legacy_pcode = models.IntegerField(null=True, blank=True)
     geom = MultiPolygonField(srid=4326, blank=True, null=True)
     name = models.CharField(max_length=100)
     objects = GeoDataManager()

@@ -66,79 +66,56 @@ class Command(BaseCommand):
         if opts["level"] == "aldeia":
             return self._handle_aldeia(provider, src, opts)
 
-        self.stdout.write("Reading provider layers...")
-        intl_posts = P.read_layer(src, provider.levels["post"])
-        intl_sucos = P.read_layer(src, provider.levels["suco"])
-        canon_sucos, canon_posts, muni_dc, muni_nm = P.load_canonical(CSV)
-
-        allocator = CodeAllocator({int(c) for c in canon_sucos} | {int(c) for c in canon_posts})
-        post_lookup = P.reconcile_posts(intl_posts, canon_posts, muni_nm, muni_dc, allocator)
-
+        spec = provider.levels["suco"]
         self.stdout.write("Geographic guard: checking suco-in-post containment...")
+        intl_posts = P.read_layer(src, provider.levels["post"])
+        intl_sucos = P.read_layer(src, spec)
         offenders = P.validate_containment(intl_sucos, intl_posts)
         if offenders:
             for name, mun, coded, actual in offenders[:50]:
                 self.stderr.write(f"  {name} [{mun}] coded->{coded} but sits in {actual}")
             raise CommandError(f"{len(offenders)} suco(s) outside their coded admin post; aborting.")
+        self.stdout.write(self.style.SUCCESS(f"Guard passed: {len(intl_sucos)} sucos in their coded posts."))
 
-        self.stdout.write("Matching sucos by name+overlap (mutual/global)...")
-        matched, removed = P.combined_match(intl_sucos, canon_sucos, GPKG)
-        overrides = _load_overrides(provider.key)
-        matched, name_override, status_override = P.apply_overrides(matched, overrides)
-        removed = [c for c in canon_sucos if c not in set(matched.values())]
-        if overrides:
-            self.stdout.write(f"Applied {len(overrides)} reviewed override(s).")
-        rows = P.reconcile_sucos(
-            intl_sucos,
-            canon_sucos,
-            post_lookup,
-            allocator,
-            provider.key,
-            matched,
-            name_override,
-            status_override,
-        )
-
-        counts = {s: sum(r.status == s for r in rows) for s in ("matched", "new")}
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"matched={counts['matched']} new={counts['new']} removed={len(removed)} "
-                f"new_posts={sum(p['status'] == 'new' for p in post_lookup.values())}"
-            )
-        )
-
+        # The data is keyed directly on the provider's INTL scheme (NewSucoCod);
+        # the legacy<->INTL bridge lives in the committed crosswalk (see _build_crosswalk).
         if opts["propose"]:
-            xwalk.save(XWALK, rows)
-            REPORT.write_text(report_mod.build_report(rows, post_lookup, removed, canon_sucos))
-            self.stdout.write(self.style.SUCCESS(f"Wrote {XWALK}\nWrote {REPORT}"))
+            self._build_crosswalk(provider, intl_posts, intl_sucos)
 
         if opts["apply"]:
-            P.emit_csv(rows, CSV)
-            P.emit_gpkg(rows, intl_sucos, GPKG)
-            self.stdout.write(self.style.SUCCESS(f"Emitted {CSV} and {GPKG} ({len(rows)} sucos)"))
+            P.emit_sucos_intl(src, spec, CSV, GPKG)
+            self.stdout.write(self.style.SUCCESS(f"Emitted {CSV} and {GPKG} ({len(intl_sucos)} sucos, INTL-keyed)"))
+
+    def _build_crosswalk(self, provider, intl_posts, intl_sucos):
+        """Regenerate the one-time legacy<->INTL crosswalk + report by reconciling
+        against a *legacy-keyed* sukus.csv/gpkg. Requires the legacy baseline; skip
+        if the current data is already INTL-keyed."""
+        try:
+            canon_sucos, canon_posts, muni_dc, muni_nm = P.load_canonical(CSV)
+            int(next(iter(canon_sucos)))  # legacy codes are ints; INTL codes aren't
+        except (ValueError, StopIteration):
+            self.stdout.write(self.style.WARNING("sukus.csv is already INTL-keyed; crosswalk is committed, skipping."))
+            return
+        allocator = CodeAllocator({int(c) for c in canon_sucos} | {int(c) for c in canon_posts})
+        post_lookup = P.reconcile_posts(intl_posts, canon_posts, muni_nm, muni_dc, allocator)
+        matched, _ = P.combined_match(intl_sucos, canon_sucos, GPKG)
+        matched, name_override, status_override = P.apply_overrides(matched, _load_overrides(provider.key))
+        removed = [c for c in canon_sucos if c not in set(matched.values())]
+        rows = P.reconcile_sucos(
+            intl_sucos, canon_sucos, post_lookup, allocator, provider.key, matched, name_override, status_override
+        )
+        xwalk.save(XWALK, rows)
+        REPORT.write_text(report_mod.build_report(rows, post_lookup, removed, canon_sucos))
+        self.stdout.write(self.style.SUCCESS(f"Wrote {XWALK}\nWrote {REPORT}"))
 
     def _handle_aldeia(self, provider, src, opts):
-        """Geometry-preserving aldeia refresh: continuing aldeias keep their existing
-        NewAldCode (so downstream upsert/refresh is clean), only new ones take a fresh
-        code. Matched against the *current* aldeias_2022.gpkg as the canonical baseline."""
+        """Aldeia refresh, keyed directly on the INTL NewAldCode scheme (same as the
+        suco track after the re-key). Downstream links are rebuilt by name, so no
+        stable-code preservation is needed -- the data carries the current INTL codes."""
         spec = provider.levels["aldeia"]
-        code_map, st = P.reconcile_aldeia_codes(src, spec, ALDEIA_GPKG)
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"aldeias={st['intl']} | continuing(exact)={st['continuing']} "
-                f"reclaimed(recode->stable)={st['reclaimed']} new={st['new']} removed={len(st['removed'])}"
-            )
-        )
-        lines = ["# Aldeia sync changeset (geometry-preserving)", ""]
-        lines.append(
-            f"- emitted **{st['intl']}** aldeias | continuing **{st['continuing']}**, "
-            f"reclaimed-stable-code **{st['reclaimed']}**, new **{st['new']}**, removed **{len(st['removed'])}**"
-        )
-        lines.append("\n## Removed (canonical aldeia with no INTL continuation -- merged away)")
-        lines += [f"- {code} {name}" for code, name in st["removed"]]
-        ALDEIA_REPORT.write_text("\n".join(lines))
-        self.stdout.write(self.style.SUCCESS(f"Wrote {ALDEIA_REPORT}"))
-
         if opts["apply"]:
-            P.emit_aldeias(src, spec, ALDEIA_GPKG, code_map=code_map)
-            self.stdout.write(self.style.SUCCESS(f"Emitted {ALDEIA_GPKG} ({st['intl']} aldeias)"))
+            P.emit_aldeias(src, spec, ALDEIA_GPKG, code_map=None)
+            self.stdout.write(self.style.SUCCESS(f"Emitted {ALDEIA_GPKG} (INTL-keyed aldeias)"))
+        else:
+            n = len(P.read_layer(src, spec))
+            self.stdout.write(self.style.SUCCESS(f"{n} INTL aldeias (NewAldCode-keyed); run --apply to emit."))

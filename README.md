@@ -67,6 +67,29 @@ See `build.yaml` for details on release tagging
 
 ## Changelog
 
+### 0.1.0
+
+**Re-keyed onto the INTL ("New*Cod") code scheme.** `pcode` is now a `CharField`
+(was integer) holding the official INTL code — `NewSucoCod` / `NewPostAdC` /
+`NewMunCode` / `NewAldCode`, zero-padded strings (e.g. suco `010106`). This:
+
+- gives **every** entity a real code from the source (no minted/NULL codes); the
+  data is **466 sucos / 70 posts / 14 municipalities / 2238 aldeias**, all current
+  INTL 2024 boundaries, with re-parenting baked in as INTL's own structure;
+- **unifies the two import tracks** — `import_timor_geo_data` (sucos) and
+  `import_timor_geo_data_2022` (aldeias) now produce the *same* INTL-keyed sucos —
+  and fixes a latent leading-zero bug (codes like `08050104` no longer truncated by
+  an `IntegerField`);
+- adds a nullable `legacy_pcode` for traceability; the committed
+  `suco_crosswalk.csv` is the legacy→INTL bridge for downstream migration.
+- **Migration note:** the model PK type changes int→str — downstream consumers
+  that store/compare the pcode value must migrate (see the partisipa-import
+  coordination). The importer is idempotent (upsert by INTL code) and re-runnable.
+
+Also includes the Django-4.2 importer fix (see 0.0.9) and the reusable
+`sync_provider_geo` pipeline. Known gap: suco **Beduku** (Liquiçá/Bazartete) is
+absent from the INTL 2024 source and is not yet included.
+
 ### 0.0.9
 
 - Fixed `import_timor_geo_data` / `import_timor_geo_data_2022` for **Django 4.2+**:
@@ -74,23 +97,6 @@ See `build.yaml` for details on release tagging
   `GeoDataManager`, avoiding `FOR UPDATE cannot be applied to the nullable side of
   an outer join` (the manager annotates a nullable FK join that the
   `update_or_create` / `get_or_create` locking SELECT can't lock). Data unchanged.
-- Reconciled the suco dataset against the **INTL 2024** boundary set (via PNDS):
-  442 -> **466 sucos** (15 JDR 2025/26 sub-divisions + 12 previously-missing
-  sucos), all boundaries refreshed, **6 new admin posts** (Matebian, Quelicai
-  Antigo, Hatulia B, Loes, Lore, Barique), and ~87 sucos re-pointed to their
-  correct current admin post. Stable pcodes preserved throughout.
-- Refreshed `aldeias_2022.gpkg` from the INTL 2024 aldeia layer to **2238
-  aldeias**, **geometry-preserving**: 2024 continuing + 121 recoded aldeias keep
-  their existing `NewAldCode` (matched by polygon overlap), only 93 genuinely-new
-  take a fresh code; 85 merged away. Stable codes mean a clean in-place upsert
-  downstream (no ghost rows). See `manage.py sync_provider_geo intl2024 --level aldeia`.
-- **Fixed the importers for Django 4.2+**: `import_timor_geo_data` /
-  `import_timor_geo_data_2022` now use the plain base manager for their
-  upserts, avoiding `FOR UPDATE cannot be applied to the nullable side of an outer
-  join` (the annotated `GeoDataManager`'s locking select).
-- Added the `sync_provider_geo` pipeline + versioned crosswalk (see above).
-- Known gap: suco **Beduku** (Liquiçá/Bazartete) is absent from the INTL 2024
-  source and is not yet included.
 
 ...
 

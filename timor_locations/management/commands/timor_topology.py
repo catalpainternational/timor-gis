@@ -26,7 +26,7 @@ class Command(BaseCommand):
             c.execute(f"SELECT topology.CreateTopology('{topology_schema_name}', {srid}, {precision});")
             # Add topology from the 'suco' table
             c.execute(f"DROP TABLE IF EXISTS {schema_name}.{table_name}")
-            c.execute(f"CREATE TABLE {schema_name}.{table_name} (pcode int PRIMARY KEY)")
+            c.execute(f"CREATE TABLE {schema_name}.{table_name} (pcode varchar(12) PRIMARY KEY)")
             c.execute(
                 f"SELECT topology.AddTopoGeometryColumn('{topology_schema_name}', '{schema_name}', '{table_name}', '{column_name}', '{geomtype}');"  # noqa: E501
             )
@@ -34,10 +34,8 @@ class Command(BaseCommand):
             for model in models.Municipality, models.AdministrativePost, models.Suco:
                 self.stdout.write(self.style.SUCCESS(f"import {model.objects.count()} geoms from {model}"))
 
-                c.execute(
-                    f"""
+                c.execute(f"""
                     INSERT INTO {schema_name}.{table_name} (pcode, {column_name})
                     SELECT  pcode, topology.toTopoGeom(geom, '{topology_schema_name}', 1, {tolerance})
                     FROM {model._meta.db_table}
-                    """
-                )
+                    """)

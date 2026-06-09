@@ -322,6 +322,82 @@ def validate_containment(intl_sucos, intl_posts):
     return offenders
 
 
+# --- INTL-keyed emit (both tracks now use the provider's New*Cod scheme) ---------
+
+SUCO_LAYER_FIELDS = ["SUCO", "NewSucoCod", "P_ADMIN", "NewPostAdC", "MUNICIPIO", "NewMunCode"]
+
+
+def emit_sucos_intl(source_dir, spec, out_csv, out_gpkg):
+    """Emit sukus.gpkg + sukus.csv keyed on the INTL scheme (NewSucoCod), directly
+    from the provider suco layer -- the same shape as the aldeia emit, no legacy
+    code involved. gpkg carries SUCONAME/SUBDSTCODE/DISTCODE/SUCOCODE/REGION (now
+    string codes) + geometry; csv adds DISTNAME/SUBDISTRCT names for the importer.
+
+    REGION is retained as an (empty) column only because the importer's csv loop
+    unpacks 7 fields; it is not stored on any model.
+    """
+    import csv as _csv
+    import json
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    layer = DataSource(str(Path(source_dir) / spec.layer_file))[0]
+    rows, features = [], []
+    for feat in layer:
+        suco, sucocode = str(feat.get("SUCO")), str(feat.get("NewSucoCod"))
+        post, subdst = str(feat.get("P_ADMIN")), str(feat.get("NewPostAdC"))
+        mun, dist = str(feat.get("MUNICIPIO")), str(feat.get("NewMunCode"))
+        rows.append([suco, subdst, dist, mun, post, sucocode, ""])
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {
+                    "SUCONAME": suco,
+                    "SUBDSTCODE": subdst,
+                    "DISTCODE": dist,
+                    "SUCOCODE": sucocode,
+                    "REGION": "",
+                },
+                "geometry": json.loads(to_multipolygon_4326(feat.geom).json),
+            }
+        )
+
+    with open(out_csv, "w", newline="") as fh:
+        w = _csv.writer(fh)
+        w.writerow(["SUCONAME", "SUBDSTCODE", "DISTCODE", "DISTNAME", "SUBDISTRCT", "SUCOCODE", "REGION"])
+        w.writerows(sorted(rows, key=lambda r: r[5]))
+
+    fc = {
+        "type": "FeatureCollection",
+        "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::4326"}},
+        "features": features,
+    }
+    with tempfile.NamedTemporaryFile("w", suffix=".geojson", delete=False) as tmp:
+        json.dump(fc, tmp)
+        tmp_path = tmp.name
+    Path(out_gpkg).unlink(missing_ok=True)
+    subprocess.run(
+        [
+            "ogr2ogr",
+            "-f",
+            "GPKG",
+            str(out_gpkg),
+            tmp_path,
+            "-nln",
+            "sukus",
+            "-nlt",
+            "MULTIPOLYGON",
+            "-lco",
+            "GEOMETRY_NAME=geom",
+            "-a_srs",
+            "EPSG:4326",
+        ],
+        check=True,
+    )
+    Path(tmp_path).unlink(missing_ok=True)
+
+
 # --- aldeia track (already on the INTL "new" code scheme) -----------------------
 
 ALDEIA_FIELDS = ["ALDEIA", "SUCO", "P_ADMIN", "MUNICIPIO", "NewAldCode", "NewSucoCod", "NewPostAdC", "NewMunCode"]
@@ -367,9 +443,7 @@ def reconcile_aldeia_codes(source_dir, spec, canonical_gpkg):
             inter = ig.intersection(cg).area
             if inter <= 0:
                 continue
-            pair_score[(icode, ccode)] = score_pair(iname, cname) + OVERLAP_WEIGHT * (
-                inter / carea if carea else 0
-            )
+            pair_score[(icode, ccode)] = score_pair(iname, cname) + OVERLAP_WEIGHT * (inter / carea if carea else 0)
 
     reclaimed, taken = 0, set()
     for (icode, ccode), s in sorted(pair_score.items(), key=lambda kv: kv[1], reverse=True):
@@ -407,8 +481,23 @@ def emit_aldeias(source_dir, spec, out_path, code_map=None):
     if code_map is None:  # wholesale adopt (no preservation)
         src = str(Path(source_dir) / spec.layer_file)
         subprocess.run(
-            ["ogr2ogr", "-f", "GPKG", str(out_path), src, "-t_srs", "EPSG:4326", "-nlt", "MULTIPOLYGON",
-             "-nln", "aldeias_2022", "-lco", "GEOMETRY_NAME=geom", "-select", ",".join(ALDEIA_FIELDS)],
+            [
+                "ogr2ogr",
+                "-f",
+                "GPKG",
+                str(out_path),
+                src,
+                "-t_srs",
+                "EPSG:4326",
+                "-nlt",
+                "MULTIPOLYGON",
+                "-nln",
+                "aldeias_2022",
+                "-lco",
+                "GEOMETRY_NAME=geom",
+                "-select",
+                ",".join(ALDEIA_FIELDS),
+            ],
             check=True,
         )
         return
@@ -430,8 +519,21 @@ def emit_aldeias(source_dir, spec, out_path, code_map=None):
         json.dump(fc, tmp)
         tmp_path = tmp.name
     subprocess.run(
-        ["ogr2ogr", "-f", "GPKG", str(out_path), tmp_path, "-nln", "aldeias_2022", "-nlt", "MULTIPOLYGON",
-         "-lco", "GEOMETRY_NAME=geom", "-a_srs", "EPSG:4326"],
+        [
+            "ogr2ogr",
+            "-f",
+            "GPKG",
+            str(out_path),
+            tmp_path,
+            "-nln",
+            "aldeias_2022",
+            "-nlt",
+            "MULTIPOLYGON",
+            "-lco",
+            "GEOMETRY_NAME=geom",
+            "-a_srs",
+            "EPSG:4326",
+        ],
         check=True,
     )
     Path(tmp_path).unlink(missing_ok=True)

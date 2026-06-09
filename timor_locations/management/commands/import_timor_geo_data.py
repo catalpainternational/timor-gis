@@ -41,11 +41,16 @@ class Command(BaseCommand):
             csvreader = csv.reader(csvfile)
             posts: list[str, str] = list(csvreader)[1:]
             for SUCONAME, SUBDSTCODE, DISTCODE, DISTNAME, SUBDISTRCT, SUCOCODE, REGION in posts:
-                municipality, _ = Municipality.objects.update_or_create(pcode=DISTCODE, defaults=dict(name=DISTNAME))
-                adminpost, _ = AdministrativePost.objects.update_or_create(
+                # Use _base_manager (plain Manager): the default GeoDataManager annotates
+                # nullable FK joins, and update_or_create's locking SELECT then trips
+                # "FOR UPDATE cannot be applied to the nullable side of an outer join" on Django 4.2+.
+                municipality, _ = Municipality._base_manager.update_or_create(
+                    pcode=DISTCODE, defaults=dict(name=DISTNAME)
+                )
+                adminpost, _ = AdministrativePost._base_manager.update_or_create(
                     pcode=SUBDSTCODE, defaults=dict(name=SUBDISTRCT, municipality=municipality)
                 )
-                suco, _ = Suco.objects.update_or_create(
+                suco, _ = Suco._base_manager.update_or_create(
                     pcode=SUCOCODE, defaults=dict(name=SUCONAME, adminpost=adminpost)
                 )
 

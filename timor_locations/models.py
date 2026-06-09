@@ -1,9 +1,11 @@
 import json
 
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db.models import MultiPolygonField
 from django.contrib.gis.db.models.functions import AsGeoJSON
 from django.db import models
-from django.db.models import F
+from django.db.models import F, Q
 from django.db.models.expressions import Combinable
 from django.utils.translation import gettext_lazy as _
 from geojson_pydantic import Feature, FeatureCollection
@@ -63,10 +65,15 @@ class TimorGeoArea(DateStampedModel):
     class Meta:
         abstract = True
 
-    pcode = models.IntegerField(primary_key=True)
+    # pcode is the INTL "New*Cod" code (zero-padded string, e.g. suco "010106",
+    # aldeia "08050104"). A CharField so leading zeros survive; it stays the PK.
+    pcode = models.CharField(max_length=12, primary_key=True)
     geom = MultiPolygonField(srid=4326, blank=True, null=True)
     name = models.CharField(max_length=100)
     objects = GeoDataManager()
+    # Codes this area carries in other schemes (Estrada, future vintages). The
+    # crosswalk lives in ProviderCode, not a column-per-scheme. See code_for().
+    codes = GenericRelation("ProviderCode")
 
     def __str__(self):
         return self.name
@@ -125,6 +132,68 @@ class Suco(TimorGeoArea):
 
 class Aldeia(TimorGeoArea):
     suco = models.ForeignKey(Suco, on_delete=models.PROTECT, null=True)
+
+
+class CodeScheme(models.TextChoices):
+    ESTRADA = "estrada", "Estrada (legacy integer codes)"
+    INTL2024 = "intl2024", "INTL / PNDS 2024 (New*Cod)"
+    # future schemes are added here -- or drop TextChoices and let `scheme` be free text
+
+
+class CodeRelation(models.TextChoices):
+    MATCHED = "matched", "Same entity, re-coded"
+    RENAME = "rename", "Same entity, renamed"
+    NEW = "new", "Introduced by this scheme; no prior code"
+    REMOVED = "removed", "In a prior scheme; gone here"
+    SPLIT = "split", "One prior entity became several"
+    MERGE = "merge", "Several prior entities became one"
+
+
+class ProviderCode(models.Model):
+    """One (scheme, code) label for one canonical area.
+
+    Every scheme an area has ever been coded in -- Estrada, INTL 2024, a future
+    vintage -- is one row here. Adding a scheme is INSERTs, never a schema
+    migration; splits/merges/new/removed are representable because each is a row
+    with a `relation`, not a scalar column. The canonical area is whatever the
+    app keys on today (the INTL pcode, via the GenericForeignKey).
+    """
+
+    scheme = models.CharField(max_length=32, choices=CodeScheme.choices)
+    code = models.CharField(max_length=16)  # string -- leading zeros survive
+    name = models.CharField(max_length=100, blank=True)  # name in this scheme (renames)
+    relation = models.CharField(max_length=12, choices=CodeRelation.choices, default=CodeRelation.MATCHED)
+    score = models.FloatField(null=True, blank=True)  # match confidence, if fuzzy
+    note = models.CharField(max_length=200, blank=True)
+
+    # which area this labels (Municipality/AdministrativePost/Suco/Aldeia)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.CharField(max_length=12)  # the area's pcode (PK is a CharField)
+    area = GenericForeignKey("content_type", "object_id")
+
+    class Meta:
+        constraints = [
+            # unique only for 1:1 relations; split/merge legitimately repeat a (scheme, code)
+            models.UniqueConstraint(
+                fields=["scheme", "code"],
+                condition=Q(relation__in=["matched", "rename", "new"]),
+                name="uniq_scheme_code_1to1",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["content_type", "object_id"], name="timor_loc_content_obj_idx"),
+            models.Index(fields=["scheme", "code"], name="timor_loc_scheme_code_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.scheme}:{self.code} -> {self.area}"
+
+
+def code_for(area, scheme):
+    """The area's code in `scheme`, or None. Call this instead of `area.pcode`
+    so the canonical scheme can change later without a downstream rewrite."""
+    pc = area.codes.filter(scheme=scheme).first()
+    return pc.code if pc else None
 
 
 class TopoJson(models.Model):

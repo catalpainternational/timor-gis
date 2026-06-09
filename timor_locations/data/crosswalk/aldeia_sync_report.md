@@ -1,0 +1,90 @@
+# Aldeia sync changeset (geometry-preserving)
+
+- emitted **2238** aldeias | continuing **2024**, reclaimed-stable-code **121**, new **93**, removed **85**
+
+## Removed (canonical aldeia with no INTL continuation -- merged away)
+- 13030204 Oetpo
+- 13030403 Padiae
+- 13030205 Sanane
+- 13030203 Oesono
+- 13030604 Teinae
+- 04020304 Loidua
+- 04020604 Garuai
+- 04040301 Boralai
+- 04040402 Laua-Liu
+- 04041404 Ua-Sufa
+- 04041501 Caranu
+- 08020705 Sakoko
+- 08030304 Manucate
+- 01011004 Faularan
+- 01011006 Leubraudo
+- 01011005 Halalmeta
+- 01040103 Leroliça
+- 12010404 Mahaklusin
+- 12010304 Tahu Bein
+- 08020612 Urluli
+- 08020607 Rematu
+- 08020609 Taklela
+- 08020606 Poepun
+- 08020610 Tidibessi
+- 08020608 Samatrae
+- 08020805 Rai Maran
+- 08020804 Nazare
+- 08020611 Urletoho
+- 08030306 Raegoa
+- 08030307 Teuro
+- 08030305 Manulete
+- 08050107 Tunufahi
+- 08050208 Lebululi
+- 08050210 Raerema
+- 08050211 Renomata
+- 08050209 Manusae
+- 08050607 Kairia
+- 08050609 Manukati Leten
+- 08050608 Lutlala
+- 08050505 Rialau
+- 08050506 Sauria
+- 04020505 Haurobu
+- 04020506 Maulame
+- 04020905 Ossu-Ua
+- 04020906 Parlamento
+- 04020303 Builai
+- 04020305 Manulai
+- 04020605 Maucale
+- 04020507 Uani-Uma
+- 04030603 Lualari
+- 04040102 Caranu
+- 04040502 Osso-Messa
+- 04040401 Butileo
+- 04040302 Uligata
+- 04040303 Vecubuti
+- 04040103 Mumana
+- 04040104 Telaha
+- 04040101 Assa-Loqui
+- 04041401 Cirilaco
+- 04041403 Loirae
+- 04041402 Daicou
+- 04040603 Laculela
+- 04040601 Eu-Afa
+- 04040604 Saebere
+- 04040602 Fae-Ua
+- 04041502 Gamana
+- 04041503 Gugulai
+- 04041504 Sialimo
+- 04040703 Uaule
+- 04040701 Lacodala
+- 04040702 Mucububo
+- 04040501 Lialura
+- 14030314 Liacaiua
+- 14030309 Daralari
+- 14030319 Namanei
+- 14030317 Macadique
+- 14030311 Edemumo
+- 14030320 Ossolari
+- 14030312 Lacarate
+- 14030308 Coquilaco
+- 14030313 Lau-Uma
+- 14030316 Lutuguia
+- 14030310 Digamasi
+- 14030318 Mata Dalan
+- 14030315 Luroboro

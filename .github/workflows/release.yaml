@@ -1,0 +1,68 @@
+name: Release to PyPI
+
+# Cut a release by pushing a version tag that matches pyproject:
+#   git tag 0.1.0 && git push origin 0.1.0
+# The job builds with uv (against the poetry-core backend), verifies the wheel
+# actually embeds the Git LFS data files, then publishes to PyPI.
+#
+# workflow_dispatch runs build + verify only (no publish) for a dry run.
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+*"   # 0.1.0rc1, 0.1.0.post1, etc.
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          lfs: true   # CRITICAL: the importer loads sukus.gpkg at runtime, so the
+                      # wheel must embed the real LFS files, not 130-byte pointers.
+
+      - name: Materialise LFS objects
+        run: git lfs pull
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Tag matches pyproject version
+        if: github.event_name == 'push'
+        run: |
+          PROJECT_VERSION=$(grep -m1 '^version = ' pyproject.toml | sed -E 's/version = "(.*)"/\1/')
+          if [ "$GITHUB_REF_NAME" != "$PROJECT_VERSION" ]; then
+            echo "::error::tag '$GITHUB_REF_NAME' != pyproject version '$PROJECT_VERSION' — bump pyproject or fix the tag."
+            exit 1
+          fi
+          echo "Releasing version $PROJECT_VERSION"
+
+      - name: Build sdist + wheel
+        run: uv build
+
+      - name: Verify the wheel embeds the data files (not LFS pointers)
+        run: |
+          WHEEL=$(ls dist/*.whl)
+          echo "Inspecting $WHEEL"
+          unzip -l "$WHEEL" | grep -E 'timor_locations/data/(sukus\.(gpkg|csv)|aldeias_2022\.gpkg)' || {
+            echo "::error::data files missing from wheel"; exit 1; }
+          # An LFS pointer is ~130 bytes; a real gpkg is megabytes. Fail if the
+          # gpkg is suspiciously small (pointer stub shipped instead of data).
+          SIZE=$(unzip -l "$WHEEL" | awk '/timor_locations\/data\/sukus\.gpkg/ {print $1; exit}')
+          echo "sukus.gpkg packaged size: ${SIZE:-0} bytes"
+          if [ "${SIZE:-0}" -lt 10000 ]; then
+            echo "::error::sukus.gpkg is only ${SIZE} bytes — looks like an LFS pointer, not the data. Aborting."
+            exit 1
+          fi
+
+      - name: Publish to PyPI
+        if: github.event_name == 'push'
+        env:
+          # Add a PyPI API token as the repo secret PYPI_API_TOKEN.
+          # Preferred alternative: PyPI Trusted Publishing (OIDC) — then drop this
+          # token, add `permissions: id-token: write` to the job, and uv picks it
+          # up automatically.
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: uv publish

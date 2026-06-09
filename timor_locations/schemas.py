@@ -9,9 +9,9 @@ class AreaOut(BaseModel):
     """
 
     type: Literal["Municipality", "Administrative Post", "Suco"]
-    pcode: int
+    pcode: str
     name: str
-    parent: int | None = None
+    parent: str | None = None
 
 
 # The following models are derived from the TopoJSON spec: https://github.com/topojson/topojson-specification/blob/master/README.md  # noqa: E501

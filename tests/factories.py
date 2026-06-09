@@ -11,6 +11,6 @@ class AreaFactory(DjangoModelFactory):
         model = Municipality
         django_get_or_create = ("pcode",)
 
-    pcode = factory.fuzzy.FuzzyInteger(low=100, high=10000)
+    pcode = factory.fuzzy.FuzzyText(length=6, chars="0123456789")
     name = factory.fuzzy.FuzzyText()
     geom = MultiPolygon(Polygon(((0, 0), (0, 1), (1, 1), (0, 0))), Polygon(((1, 1), (1, 2), (2, 2), (1, 1))))

@@ -29,7 +29,10 @@ authors = [
   "Joshua Brooks <josh@catalpa.io>",
   "Anders Hofstee <anders@catalpa.io>",
 ]
-exclude = ["tests", "sl_tests", "timor_locations/data", "docs"]
+# timor_locations/data is INCLUDED: the importer loads sukus.gpkg / aldeias_2022.gpkg
+# at runtime via resources.files("timor_locations.data"), so the data must ship in
+# the wheel for `pip install` + import_timor_geo_data to work.
+exclude = ["tests", "sl_tests", "docs"]
 license = "GPLv3"
 
 readme = 'README.md'

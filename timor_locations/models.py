@@ -4,6 +4,7 @@ from django.contrib.gis.db.models import MultiPolygonField
 from django.contrib.gis.db.models.functions import AsGeoJSON
 from django.db import models
 from django.db.models import F
+from django.db.models.expressions import Combinable
 from django.utils.translation import gettext_lazy as _
 from geojson_pydantic import Feature, FeatureCollection
 from geojson_pydantic.geometries import MultiPolygon
@@ -22,7 +23,7 @@ class DateStampedModel(models.Model):
 
 class GeoQuerySet(models.QuerySet):
     def annotate_geo_json(self, simplify: float | None = None, quantize: int | None = None):
-        g = F("geom")
+        g: Combinable = F("geom")
 
         if simplify:
             g = SimplifyPreserve(g, simplify=simplify)
@@ -105,7 +106,7 @@ class TimorGeoArea(DateStampedModel):
 
     @classmethod
     def topology(cls):
-        import topojson
+        import topojson  # type: ignore[import]
 
         return topojson.Topology(cls.all_features().json())
 

@@ -1,7 +1,7 @@
-import factory
-import factory.fuzzy
+import factory  # type: ignore[import]
+import factory.fuzzy  # type: ignore[import]
 from django.contrib.gis.geos import MultiPolygon, Polygon
-from factory.django import DjangoModelFactory
+from factory.django import DjangoModelFactory  # type: ignore[import]
 
 from timor_locations.models import Municipality
 

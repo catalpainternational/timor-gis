@@ -14,7 +14,7 @@ class AreaOut(BaseModel):
     parent: int | None = None
 
 
-# The following models are derived froim the TopoJSON spec: https://github.com/topojson/topojson-specification/blob/master/README.md
+# The following models are derived from the TopoJSON spec: https://github.com/topojson/topojson-specification/blob/master/README.md  # noqa: E501
 # A position is represented by an array of numbers. There must be at least two elements, and may be more
 position = list[int]
 

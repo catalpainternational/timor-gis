@@ -28,7 +28,7 @@ class Command(BaseCommand):
             c.execute(f"DROP TABLE IF EXISTS {schema_name}.{table_name}")
             c.execute(f"CREATE TABLE {schema_name}.{table_name} (pcode int PRIMARY KEY)")
             c.execute(
-                f"SELECT topology.AddTopoGeometryColumn('{topology_schema_name}', '{schema_name}', '{table_name}', '{column_name}', '{geomtype}');"
+                f"SELECT topology.AddTopoGeometryColumn('{topology_schema_name}', '{schema_name}', '{table_name}', '{column_name}', '{geomtype}');"  # noqa: E501
             )
 
             for model in models.Municipality, models.AdministrativePost, models.Suco:

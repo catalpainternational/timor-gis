@@ -61,8 +61,14 @@ class Command(BaseCommand):
             c.execute(
                 """
                 UPDATE timor_locations_administrativepost ap
-                    SET geom = (SELECT st_multi(st_union(geom)) FROM timor_locations_suco s WHERE s.adminpost_id = ap.pcode);
+                    SET geom = (
+                        SELECT st_multi(st_union(geom)) FROM timor_locations_suco s
+                        WHERE s.adminpost_id = ap.pcode
+                    );
                 UPDATE timor_locations_municipality m
-                    SET geom = (SELECT st_multi(st_union(geom)) FROM timor_locations_administrativepost ap WHERE ap.municipality_id = m.pcode);
+                    SET geom = (
+                        SELECT st_multi(st_union(geom)) FROM timor_locations_administrativepost ap
+                        WHERE ap.municipality_id = m.pcode
+                    );
                 """
             )

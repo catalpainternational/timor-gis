@@ -3,6 +3,21 @@
 from django.db import migrations, models
 
 
+def flush_geo_areas(apps, schema_editor):
+    """Re-key cutover to the INTL ("New*Cod") scheme.
+
+    The old integer pcodes have no generic mapping to the INTL scheme, and the
+    pcode AlterField below would otherwise cast them to decimal strings
+    ("30101") that are indistinguishable from real INTL codes ("010106") yet are
+    not INTL codes. To leave *only* INTL codes representable, drop every row here
+    rather than cast it; re-run ``manage.py import_timor_geo_data`` after
+    migrating to repopulate from the committed INTL-keyed data. Child-first order
+    satisfies the ``on_delete=PROTECT`` foreign keys.
+    """
+    for model_name in ("Aldeia", "Suco", "AdministrativePost", "Municipality"):
+        apps.get_model("timor_locations", model_name).objects.all().delete()
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,26 +25,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='administrativepost',
-            name='legacy_pcode',
-            field=models.IntegerField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='aldeia',
-            name='legacy_pcode',
-            field=models.IntegerField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='municipality',
-            name='legacy_pcode',
-            field=models.IntegerField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='suco',
-            name='legacy_pcode',
-            field=models.IntegerField(blank=True, null=True),
-        ),
+        # Cutover first: empty the tables so the pcode type change below operates
+        # on zero rows and no stringified-integer code can survive the re-key.
+        migrations.RunPython(flush_geo_areas, migrations.RunPython.noop),
         migrations.AlterField(
             model_name='administrativepost',
             name='pcode',

@@ -324,8 +324,6 @@ def validate_containment(intl_sucos, intl_posts):
 
 # --- INTL-keyed emit (both tracks now use the provider's New*Cod scheme) ---------
 
-SUCO_LAYER_FIELDS = ["SUCO", "NewSucoCod", "P_ADMIN", "NewPostAdC", "MUNICIPIO", "NewMunCode"]
-
 
 def emit_sucos_intl(source_dir, spec, out_csv, out_gpkg):
     """Emit sukus.gpkg + sukus.csv keyed on the INTL scheme (NewSucoCod), directly
@@ -377,25 +375,27 @@ def emit_sucos_intl(source_dir, spec, out_csv, out_gpkg):
         json.dump(fc, tmp)
         tmp_path = tmp.name
     Path(out_gpkg).unlink(missing_ok=True)
-    subprocess.run(
-        [
-            "ogr2ogr",
-            "-f",
-            "GPKG",
-            str(out_gpkg),
-            tmp_path,
-            "-nln",
-            "sukus",
-            "-nlt",
-            "MULTIPOLYGON",
-            "-lco",
-            "GEOMETRY_NAME=geom",
-            "-a_srs",
-            "EPSG:4326",
-        ],
-        check=True,
-    )
-    Path(tmp_path).unlink(missing_ok=True)
+    try:
+        subprocess.run(
+            [
+                "ogr2ogr",
+                "-f",
+                "GPKG",
+                str(out_gpkg),
+                tmp_path,
+                "-nln",
+                "sukus",
+                "-nlt",
+                "MULTIPOLYGON",
+                "-lco",
+                "GEOMETRY_NAME=geom",
+                "-a_srs",
+                "EPSG:4326",
+            ],
+            check=True,
+        )
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
 
 
 # --- aldeia track (already on the INTL "new" code scheme) -----------------------
@@ -403,216 +403,33 @@ def emit_sucos_intl(source_dir, spec, out_csv, out_gpkg):
 ALDEIA_FIELDS = ["ALDEIA", "SUCO", "P_ADMIN", "MUNICIPIO", "NewAldCode", "NewSucoCod", "NewPostAdC", "NewMunCode"]
 
 
-def reconcile_aldeia_codes(source_dir, spec, canonical_gpkg):
-    """Decide each INTL aldeia's emitted NewAldCode so continuing aldeias keep their
-    *existing* code (stable id), and only genuinely-new aldeias take a fresh one.
-
-    Same scheme on both sides, so identity is: (1) exact NewAldCode match keeps its
-    code; (2) an INTL aldeia whose code is absent from canonical is geometry-matched
-    to a canonical aldeia whose code is absent from INTL (a recode) and reclaims that
-    stable code; (3) anything left is genuinely new and keeps its INTL code.
-
-    Returns (code_map: {intl_code -> emitted_code}, stats).
-    """
-    intl = read_layer(source_dir, spec)
-    intl_codes = {f.code for f in intl}
-    layer = DataSource(str(canonical_gpkg))[0]
-    canon = [(str(feat.get("NewAldCode")), str(feat.get("ALDEIA")), feat.geom.geos) for feat in layer]
-    canon_codes = {c for c, _, _ in canon}
-
-    code_map = {f.code: f.code for f in intl if f.code in canon_codes}  # (1) continuing
-
-    canon_only = [(c, n, g, g.area, g.extent) for c, n, g in canon if c not in intl_codes]
-    intl_only = []
-    for f in intl:
-        if f.code in canon_codes:
-            continue
-        g = f.geom_src.clone()
-        g.transform(SpatialReference(WGS84))
-        gg = g.geos
-        intl_only.append((f.code, f.name, gg, gg.extent))
-
-    def bbox_hit(a, b):
-        return not (a[2] < b[0] or b[2] < a[0] or a[3] < b[1] or b[3] < a[1])
-
-    pair_score = {}
-    for icode, iname, ig, iext in intl_only:
-        for ccode, cname, cg, carea, cext in canon_only:
-            if not bbox_hit(iext, cext) or not ig.intersects(cg):
-                continue
-            inter = ig.intersection(cg).area
-            if inter <= 0:
-                continue
-            pair_score[(icode, ccode)] = score_pair(iname, cname) + OVERLAP_WEIGHT * (inter / carea if carea else 0)
-
-    reclaimed, taken = 0, set()
-    for (icode, ccode), s in sorted(pair_score.items(), key=lambda kv: kv[1], reverse=True):
-        if s < MATCH_FLOOR or icode in code_map or ccode in taken:
-            continue
-        code_map[icode] = ccode  # (2) reclaim the stable canonical code
-        taken.add(ccode)
-        reclaimed += 1
-    new = 0
-    for f in intl:
-        if f.code not in code_map:
-            code_map[f.code] = f.code  # (3) genuinely new
-            new += 1
-    stats = {
-        "intl": len(intl),
-        "continuing": len(intl) - len(intl_only),
-        "reclaimed": reclaimed,
-        "new": new,
-        "removed": [(c, n) for c, n, *_ in canon_only if c not in taken],
-    }
-    return code_map, stats
-
-
-def emit_aldeias(source_dir, spec, out_path, code_map=None):
+def emit_aldeias(source_dir, spec, out_path):
     """Emit aldeias_2022.gpkg from the INTL aldeia layer: reproject to EPSG:4326,
-    promote to MULTIPOLYGON, keep the importer's fields. If ``code_map`` is given,
-    each feature's NewAldCode is remapped to its resolved (stable) code."""
-    import json
+    promote to MULTIPOLYGON, keep the importer's fields. NewAldCode is adopted
+    verbatim -- the data is already on the INTL scheme, so there is no remapping
+    and no legacy code is ever involved."""
     import subprocess
-    import tempfile
 
     out_path = Path(out_path)
     out_path.unlink(missing_ok=True)
-
-    if code_map is None:  # wholesale adopt (no preservation)
-        src = str(Path(source_dir) / spec.layer_file)
-        subprocess.run(
-            [
-                "ogr2ogr",
-                "-f",
-                "GPKG",
-                str(out_path),
-                src,
-                "-t_srs",
-                "EPSG:4326",
-                "-nlt",
-                "MULTIPOLYGON",
-                "-nln",
-                "aldeias_2022",
-                "-lco",
-                "GEOMETRY_NAME=geom",
-                "-select",
-                ",".join(ALDEIA_FIELDS),
-            ],
-            check=True,
-        )
-        return
-
-    layer = DataSource(str(Path(source_dir) / spec.layer_file))[0]
-    features = []
-    for feat in layer:
-        props = {f: feat.get(f) for f in ALDEIA_FIELDS}
-        props["NewAldCode"] = code_map.get(str(feat.get("NewAldCode")), str(feat.get("NewAldCode")))
-        features.append(
-            {"type": "Feature", "properties": props, "geometry": json.loads(to_multipolygon_4326(feat.geom).json)}
-        )
-    fc = {
-        "type": "FeatureCollection",
-        "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::4326"}},
-        "features": features,
-    }
-    with tempfile.NamedTemporaryFile("w", suffix=".geojson", delete=False) as tmp:
-        json.dump(fc, tmp)
-        tmp_path = tmp.name
+    src = str(Path(source_dir) / spec.layer_file)
     subprocess.run(
         [
             "ogr2ogr",
             "-f",
             "GPKG",
             str(out_path),
-            tmp_path,
+            src,
+            "-t_srs",
+            "EPSG:4326",
+            "-nlt",
+            "MULTIPOLYGON",
             "-nln",
             "aldeias_2022",
-            "-nlt",
-            "MULTIPOLYGON",
             "-lco",
             "GEOMETRY_NAME=geom",
-            "-a_srs",
-            "EPSG:4326",
+            "-select",
+            ",".join(ALDEIA_FIELDS),
         ],
         check=True,
     )
-    Path(tmp_path).unlink(missing_ok=True)
-
-
-# --- emit (importer schema) -----------------------------------------------------
-
-
-def emit_csv(rows, path):
-    """sukus.csv in the importer's column order, one row per suco."""
-    import csv as _csv
-
-    with open(path, "w", newline="") as fh:
-        w = _csv.writer(fh)
-        w.writerow(["SUCONAME", "SUBDSTCODE", "DISTCODE", "DISTNAME", "SUBDISTRCT", "SUCOCODE", "REGION"])
-        for r in sorted(rows, key=lambda r: int(r.canonical_pcode)):
-            w.writerow(
-                [r.canonical_name, r.subdstcode, r.distcode, r.distname, r.subdistrct, r.canonical_pcode, r.region]
-            )
-
-
-def emit_gpkg(rows, intl_sucos, path):
-    """sukus.gpkg (layer 'sukus', geom col 'geom', MULTIPOLYGON EPSG:4326) matching
-    the existing schema: SUCONAME, SUBDSTCODE, DISTCODE, SUCOCODE, REGION.
-
-    Built via a temporary GeoJSON piped through ogr2ogr so we don't need write
-    bindings; geometry is taken from the provider layer by provider_code.
-    """
-    import json
-    import subprocess
-    import tempfile
-    from pathlib import Path
-
-    geom_by_code = {f.code: f for f in intl_sucos}
-    features = []
-    for r in rows:
-        f = geom_by_code.get(r.provider_code)
-        if f is None:
-            raise ValueError(f"No provider geometry for {r.provider_name} ({r.provider_code})")
-        geom = to_multipolygon_4326(f.geom_src)
-        features.append(
-            {
-                "type": "Feature",
-                "properties": {
-                    "SUCONAME": r.canonical_name,
-                    "SUBDSTCODE": int(r.subdstcode),
-                    "DISTCODE": int(r.distcode),
-                    "SUCOCODE": int(r.canonical_pcode),
-                    "REGION": int(r.region),
-                },
-                "geometry": json.loads(geom.json),
-            }
-        )
-    fc = {
-        "type": "FeatureCollection",
-        "crs": {"type": "name", "properties": {"name": "urn:ogc:def:crs:EPSG::4326"}},
-        "features": features,
-    }
-    path = Path(path)
-    with tempfile.NamedTemporaryFile("w", suffix=".geojson", delete=False) as tmp:
-        json.dump(fc, tmp)
-        tmp_path = tmp.name
-    path.unlink(missing_ok=True)
-    subprocess.run(
-        [
-            "ogr2ogr",
-            "-f",
-            "GPKG",
-            str(path),
-            tmp_path,
-            "-nln",
-            "sukus",
-            "-nlt",
-            "MULTIPOLYGON",
-            "-lco",
-            "GEOMETRY_NAME=geom",
-            "-a_srs",
-            "EPSG:4326",
-        ],
-        check=True,
-    )
-    Path(tmp_path).unlink(missing_ok=True)

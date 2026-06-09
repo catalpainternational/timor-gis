@@ -80,11 +80,19 @@ See `build.yaml` for details on release tagging
   `import_timor_geo_data_2022` (aldeias) now produce the *same* INTL-keyed sucos —
   and fixes a latent leading-zero bug (codes like `08050104` no longer truncated by
   an `IntegerField`);
-- adds a nullable `legacy_pcode` for traceability; the committed
-  `suco_crosswalk.csv` is the legacy→INTL bridge for downstream migration.
-- **Migration note:** the model PK type changes int→str — downstream consumers
-  that store/compare the pcode value must migrate (see the partisipa-import
-  coordination). The importer is idempotent (upsert by INTL code) and re-runnable.
+- replaces the idea of a single `legacy_pcode` column with a `ProviderCode` table:
+  every scheme an area has been coded in (Estrada, INTL 2024, future vintages) is a
+  row, so adding a scheme is INSERTs not a schema migration, and splits/merges/
+  renames are representable. Seed it from the committed `suco_crosswalk.csv` with
+  `manage.py load_provider_codes`; look codes up with `code_for(area, scheme)`.
+  The crosswalk currently bridges **sucos only** — posts/municipalities/aldeias are
+  not yet mapped.
+- **Migration note:** the model PK type changes int→str, and migration `0008`
+  **flushes the four area tables** before the type change so no stringified-integer
+  code can survive the re-key. Run order on an existing DB: `migrate` →
+  `import_timor_geo_data` → `load_provider_codes`. Downstream consumers that store
+  or compare the pcode value must migrate (see the partisipa-import coordination).
+  The importer is idempotent (upsert by INTL code) and re-runnable.
 
 Also includes the Django-4.2 importer fix (see 0.0.9) and the reusable
 `sync_provider_geo` pipeline. Known gap: suco **Beduku** (Liquiçá/Bazartete) is

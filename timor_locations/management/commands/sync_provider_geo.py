@@ -114,7 +114,7 @@ class Command(BaseCommand):
         stable-code preservation is needed -- the data carries the current INTL codes."""
         spec = provider.levels["aldeia"]
         if opts["apply"]:
-            P.emit_aldeias(src, spec, ALDEIA_GPKG, code_map=None)
+            P.emit_aldeias(src, spec, ALDEIA_GPKG)
             self.stdout.write(self.style.SUCCESS(f"Emitted {ALDEIA_GPKG} (INTL-keyed aldeias)"))
         else:
             n = len(P.read_layer(src, spec))

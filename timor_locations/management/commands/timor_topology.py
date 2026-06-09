@@ -34,8 +34,10 @@ class Command(BaseCommand):
             for model in models.Municipality, models.AdministrativePost, models.Suco:
                 self.stdout.write(self.style.SUCCESS(f"import {model.objects.count()} geoms from {model}"))
 
-                c.execute(f"""
+                c.execute(
+                    f"""
                     INSERT INTO {schema_name}.{table_name} (pcode, {column_name})
                     SELECT  pcode, topology.toTopoGeom(geom, '{topology_schema_name}', 1, {tolerance})
                     FROM {model._meta.db_table}
-                    """)
+                    """
+                )

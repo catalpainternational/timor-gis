@@ -61,7 +61,7 @@ def to_multipolygon_4326(geom_src: OGRGeometry) -> OGRGeometry:
     g.transform(SpatialReference(WGS84))
     if g.geom_type.name == "Polygon":
         mp = OGRGeometry("MULTIPOLYGON", SpatialReference(WGS84))
-        mp.add(g)
+        mp.add(g)  # type: ignore[attr-defined]  # OGRGeometry.add exists at runtime; stubs gap
         g = mp
     return g
 
@@ -71,7 +71,10 @@ def to_multipolygon_4326(geom_src: OGRGeometry) -> OGRGeometry:
 
 def load_canonical(csv_path: str):
     """Returns (sucos_by_pcode, posts_by_subdst, muni_by_distcode, muni_by_name)."""
-    sucos, posts, muni_dc, muni_nm = {}, {}, {}, {}
+    sucos: dict = {}
+    posts: dict = {}
+    muni_dc: dict = {}
+    muni_nm: dict = {}
     with open(csv_path) as fh:
         for r in csv.DictReader(fh):
             sucos[r["SUCOCODE"]] = r

@@ -1,10 +1,10 @@
-# 0.1.0
+# 0.2.0
 
  - Re-keyed onto the INTL ("New*Cod") scheme: `pcode` is now a `CharField` PK
  - Migration 0008 flushes the area tables before the type change (re-import after)
  - Added the `sync_provider_geo` reconciliation pipeline (INTL 2024 boundaries)
  - Added a `ProviderCode` table (per-scheme code bridge) + `load_provider_codes`;
-   replaces the single-column legacy code. See the README 0.1.0 notes for details.
+   replaces the single-column legacy code. See the README 0.2.0 notes for details.
 
 # 0.0.5
 

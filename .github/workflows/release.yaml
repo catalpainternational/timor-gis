@@ -3,7 +3,17 @@ name: Release to PyPI
 # Cut a release by pushing a version tag that matches pyproject:
 #   git tag 0.1.0 && git push origin 0.1.0
 # The job builds with uv (against the poetry-core backend), verifies the wheel
-# actually embeds the Git LFS data files, then publishes to PyPI.
+# actually embeds the Git LFS data files, then publishes to PyPI via Trusted
+# Publishing (OIDC) — no API token stored anywhere.
+#
+# One-time PyPI setup (project owner, on pypi.org):
+#   timor-locations -> Manage -> Publishing -> Add a GitHub trusted publisher:
+#     Owner:    catalpainternational
+#     Repo:     timor-gis
+#     Workflow: release.yaml
+#     Environment: (leave blank, or set "pypi" and add `environment: pypi` below)
+# GitHub mints a short-lived OIDC token (needs id-token: write, set below) and
+# PyPI exchanges it for a one-time upload token. Nothing to rotate.
 #
 # workflow_dispatch runs build + verify only (no publish) for a dry run.
 
@@ -17,6 +27,9 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # required for PyPI Trusted Publishing (OIDC)
     steps:
       - uses: actions/checkout@v5
         with:
@@ -57,12 +70,9 @@ jobs:
             exit 1
           fi
 
-      - name: Publish to PyPI
+      - name: Publish to PyPI (Trusted Publishing / OIDC)
         if: github.event_name == 'push'
-        env:
-          # Add a PyPI API token as the repo secret PYPI_API_TOKEN.
-          # Preferred alternative: PyPI Trusted Publishing (OIDC) — then drop this
-          # token, add `permissions: id-token: write` to the job, and uv picks it
-          # up automatically.
-          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
-        run: uv publish
+        # No token: uv exchanges the GitHub OIDC identity for a one-time PyPI
+        # token. `always` fails loudly if OIDC isn't available, rather than
+        # silently looking for credentials that aren't there.
+        run: uv publish --trusted-publishing always

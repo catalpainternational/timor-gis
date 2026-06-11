@@ -407,7 +407,7 @@ ALDEIA_FIELDS = ["ALDEIA", "SUCO", "P_ADMIN", "MUNICIPIO", "NewAldCode", "NewSuc
 
 
 def emit_aldeias(source_dir, spec, out_path):
-    """Emit aldeias_2022.gpkg from the INTL aldeia layer: reproject to EPSG:4326,
+    """Emit aldeias_2024.gpkg from the INTL aldeia layer: reproject to EPSG:4326,
     promote to MULTIPOLYGON, keep the importer's fields. NewAldCode is adopted
     verbatim -- the data is already on the INTL scheme, so there is no remapping
     and no legacy code is ever involved."""
@@ -428,7 +428,7 @@ def emit_aldeias(source_dir, spec, out_path):
             "-nlt",
             "MULTIPOLYGON",
             "-nln",
-            "aldeias_2022",
+            "aldeias_2024",
             "-lco",
             "GEOMETRY_NAME=geom",
             "-select",

@@ -77,7 +77,7 @@ See `build.yaml` for details on release tagging
   data is **466 sucos / 70 posts / 14 municipalities / 2238 aldeias**, all current
   INTL 2024 boundaries, with re-parenting baked in as INTL's own structure;
 - **unifies the two import tracks** — `import_timor_geo_data` (sucos) and
-  `import_timor_geo_data_2022` (aldeias) now produce the *same* INTL-keyed sucos —
+  `import_timor_geo_data_aldeias` (aldeias) now produce the *same* INTL-keyed sucos —
   and fixes a latent leading-zero bug (codes like `08050104` no longer truncated by
   an `IntegerField`);
 - replaces the idea of a single `legacy_pcode` column with a `ProviderCode` table:
@@ -100,7 +100,7 @@ absent from the INTL 2024 source and is not yet included.
 
 ### 0.0.9
 
-- Fixed `import_timor_geo_data` / `import_timor_geo_data_2022` for **Django 4.2+**:
+- Fixed `import_timor_geo_data` / `import_timor_geo_data_aldeias` for **Django 4.2+**:
   the upserts now use the plain base manager instead of the annotated
   `GeoDataManager`, avoiding `FOR UPDATE cannot be applied to the nullable side of
   an outer join` (the manager annotates a nullable FK join that the

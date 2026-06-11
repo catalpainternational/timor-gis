@@ -59,7 +59,7 @@ jobs:
         run: |
           WHEEL=$(ls dist/*.whl)
           echo "Inspecting $WHEEL"
-          unzip -l "$WHEEL" | grep -E 'timor_locations/data/(sukus\.(gpkg|csv)|aldeias_2022\.gpkg)' || {
+          unzip -l "$WHEEL" | grep -E 'timor_locations/data/(sukus\.(gpkg|csv)|aldeias_2024\.gpkg)' || {
             echo "::error::data files missing from wheel"; exit 1; }
           # An LFS pointer is ~130 bytes; a real gpkg is megabytes. Fail if the
           # gpkg is suspiciously small (pointer stub shipped instead of data).

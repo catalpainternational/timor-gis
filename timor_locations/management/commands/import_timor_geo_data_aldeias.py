@@ -9,7 +9,7 @@ from django.db import connection
 from timor_locations.models import AdministrativePost, Aldeia, Municipality, Suco
 
 aldeia_mapping = {"geom": "MULTIPOLYGON", "name": "ALDEIA", "pcode": "NewAldCode"}
-SOURCE_GEO = resources.files("timor_locations.data").joinpath("aldeias_2022.gpkg")
+SOURCE_GEO = resources.files("timor_locations.data").joinpath("aldeias_2024.gpkg")
 
 
 class Command(BaseCommand):

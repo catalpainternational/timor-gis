@@ -8,6 +8,12 @@
    2022 — the geometries and codes come straight from the INTL 2024 source.
  - Removed the stale, unused `Admin_Aldeia2022.csv` (superseded 2022 data,
    referenced nowhere).
+ - **Fix:** `import_timor_geo_data` and `import_timor_geo_data_aldeias` now compose
+   when run in sequence. Suco pcodes come from `sukus.gpkg`; aldeias link via
+   `SucoIndex` (trust matching `NewSucoCod` when names agree, else spatial
+   containment). Hierarchy upserts key on `pcode` only. When sucos are already
+   loaded, the aldeia importer skips re-creating the hierarchy. Audit:
+   `timor_locations/data/crosswalk/aldeia_suco_pcode_remap.csv`.
 
 # 0.2.0
 

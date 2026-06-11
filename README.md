@@ -67,6 +67,14 @@ See `build.yaml` for details on release tagging
 
 ## Changelog
 
+### 0.3.0
+
+- Renamed aldeia importer and data file from 2022 → 2024 naming (see CHANGELOG).
+- **Composable imports:** run `import_timor_geo_data` then
+  `import_timor_geo_data_aldeias` on the same DB. Suco pcodes are authoritative
+  from `sukus.gpkg`; ~72 aldeia rows with stale `NewSucoCod` in the upstream INTL
+  bundle are remapped spatially at import time.
+
 ### 0.2.0
 
 **Re-keyed onto the INTL ("New*Cod") code scheme.** `pcode` is now a `CharField`
@@ -76,10 +84,9 @@ See `build.yaml` for details on release tagging
 - gives **every** entity a real code from the source (no minted/NULL codes); the
   data is **466 sucos / 70 posts / 14 municipalities / 2238 aldeias**, all current
   INTL 2024 boundaries, with re-parenting baked in as INTL's own structure;
-- **unifies the two import tracks** — `import_timor_geo_data` (sucos) and
-  `import_timor_geo_data_aldeias` (aldeias) now produce the *same* INTL-keyed sucos —
-  and fixes a latent leading-zero bug (codes like `08050104` no longer truncated by
-  an `IntegerField`);
+- re-keys onto INTL string pcodes (fixes a latent leading-zero bug — codes like
+  `08050104` no longer truncated by an `IntegerField`); **0.3.0** makes the suco
+  and aldeia importers composable on those codes;
 - replaces the idea of a single `legacy_pcode` column with a `ProviderCode` table:
   every scheme an area has been coded in (Estrada, INTL 2024, future vintages) is a
   row, so adding a scheme is INSERTs not a schema migration, and splits/merges/

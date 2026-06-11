@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 
 from timor_locations.models import AdministrativePost, Aldeia, Municipality, Suco
+from timor_locations.suco_resolve import SucoIndex
 
 aldeia_mapping = {"geom": "MULTIPOLYGON", "name": "ALDEIA", "pcode": "NewAldCode"}
 SOURCE_GEO = resources.files("timor_locations.data").joinpath("aldeias_2024.gpkg")
@@ -21,19 +22,22 @@ class Command(BaseCommand):
         if not os.path.exists(SOURCE_GEO):
             raise FileNotFoundError(f"The geographic data is not present: expected a file at {SOURCE_GEO}")
 
+        suco_index = SucoIndex.from_sukus_gpkg()
         ds = DataSource(SOURCE_GEO)
-
-        # if Aldeia.objects.count() or Suco.objects.count() or AdministrativePost.objects.count() or Municipality.objects.count():  # noqa: E501
-        #     raise NotImplementedError("Please clear the tables before import")
+        sucos_preloaded = Suco._base_manager.exists()
 
         lm = LayerMapping(Aldeia, ds, aldeia_mapping)
         self.stdout.write(self.style.SUCCESS("Saving aldeias from the gpkg file"))
         lm.save()
 
-        self.stdout.write(self.style.SUCCESS("Adding admin posts and municipalities"))
+        self.stdout.write(
+            self.style.SUCCESS(
+                "Linking aldeias to sucos via sukus.gpkg (spatial); "
+                "aldeia NewSucoCod is not trusted when it disagrees with Suco.shp"
+            )
+        )
 
         layer = ds[0]
-        # Fetch the ID & name of aldeia suco, pa, mun
         names = zip(
             *(
                 layer.get_fields(f)
@@ -50,36 +54,49 @@ class Command(BaseCommand):
             )
         )
 
-        ids: set[int] = set()
+        ids: set[str] = set()
+        remapped = 0
 
         for NewAldCode, NewSucoCod, NewPostAdC, NewMunCode, ALDEIA, SUCO, P_ADMIN, MUNICIPIO in names:
-            print(NewAldCode, NewSucoCod, NewPostAdC, NewMunCode, ALDEIA, SUCO, P_ADMIN, MUNICIPIO)
-
-            # _base_manager (plain Manager): the default GeoDataManager annotates nullable
-            # FK joins, and get_or_create's locking SELECT then trips "FOR UPDATE cannot be
-            # applied to the nullable side of an outer join" on Django 4.2+.
-            if NewMunCode not in ids:
-                municipality, _ = Municipality._base_manager.get_or_create(pcode=NewMunCode, name=MUNICIPIO)
-                ids.add(NewMunCode)
-                self.stdout.write(self.style.SUCCESS(f"ADDED {municipality}"))
-
-            if NewPostAdC not in ids:
-                adminpost, _ = AdministrativePost._base_manager.get_or_create(
-                    pcode=NewPostAdC, name=P_ADMIN, municipality_id=NewMunCode
-                )
-                ids.add(NewPostAdC)
-                self.stdout.write(self.style.SUCCESS(f"ADDED {adminpost}"))
-
-            if NewSucoCod not in ids:
-                suco, _ = Suco._base_manager.get_or_create(pcode=NewSucoCod, name=SUCO, adminpost_id=NewPostAdC)
-                ids.add(NewSucoCod)
-                self.stdout.write(self.style.SUCCESS(f"ADDED {suco}"))
-
             aldeia = Aldeia._base_manager.get(pcode=NewAldCode)
-            aldeia.suco_id = NewSucoCod
-            aldeia.save()
+            resolved_suco = suco_index.resolve_pcode(aldeia.geom, NewSucoCod, SUCO)
+            if resolved_suco != NewSucoCod:
+                remapped += 1
+
+            if not sucos_preloaded:
+                # _base_manager (plain Manager): the default GeoDataManager annotates nullable
+                # FK joins, and update_or_create's locking SELECT then trips "FOR UPDATE cannot be
+                # applied to the nullable side of an outer join" on Django 4.2+.
+                # Match hierarchy rows on pcode (the PK) only so this importer composes with
+                # import_timor_geo_data, which may have already loaded sucos from sukus.gpkg.
+                if NewMunCode not in ids:
+                    municipality, _ = Municipality._base_manager.update_or_create(
+                        pcode=NewMunCode, defaults=dict(name=MUNICIPIO)
+                    )
+                    ids.add(NewMunCode)
+                    self.stdout.write(self.style.SUCCESS(f"ADDED {municipality}"))
+
+                if NewPostAdC not in ids:
+                    adminpost, _ = AdministrativePost._base_manager.update_or_create(
+                        pcode=NewPostAdC, defaults=dict(name=P_ADMIN, municipality_id=NewMunCode)
+                    )
+                    ids.add(NewPostAdC)
+                    self.stdout.write(self.style.SUCCESS(f"ADDED {adminpost}"))
+
+                if resolved_suco not in ids:
+                    suco_name = suco_index.suco_name(resolved_suco)
+                    suco, _ = Suco._base_manager.update_or_create(
+                        pcode=resolved_suco, defaults=dict(name=suco_name, adminpost_id=NewPostAdC)
+                    )
+                    ids.add(resolved_suco)
+                    self.stdout.write(self.style.SUCCESS(f"ADDED {suco}"))
+
+            aldeia.suco_id = resolved_suco
+            aldeia.save(update_fields=["suco_id"])
             ids.add(NewAldCode)
-            self.stdout.write(self.style.SUCCESS(f"ADDED {aldeia}"))
+            self.stdout.write(self.style.SUCCESS(f"LINKED {aldeia} -> suco {resolved_suco}"))
+
+        self.stdout.write(self.style.SUCCESS(f"Remapped {remapped} aldeias off stale aldeia-layer NewSucoCod values"))
 
         self.stdout.write(
             self.style.SUCCESS(

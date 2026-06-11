@@ -12,8 +12,11 @@
    when run in sequence. Suco pcodes come from `sukus.gpkg`; aldeias link via
    `SucoIndex` (trust matching `NewSucoCod` when names agree, else spatial
    containment). Hierarchy upserts key on `pcode` only. When sucos are already
-   loaded, the aldeia importer skips re-creating the hierarchy. Audit:
-   `timor_locations/data/crosswalk/aldeia_suco_pcode_remap.csv`.
+   loaded, the aldeia importer skips re-creating the hierarchy and skips suco/
+   admin-post/municipality geometry rollup. Audit:
+   `timor_locations/data/crosswalk/aldeia_suco_pcode_remap.csv` (15 attribute-level
+   mismatches; ~72 rows remapped at import). README documents suco authority and
+   that aldeia-layer codes are not official when they disagree.
 
 # 0.2.0
 

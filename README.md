@@ -71,9 +71,21 @@ See `build.yaml` for details on release tagging
 
 - Renamed aldeia importer and data file from 2022 → 2024 naming (see CHANGELOG).
 - **Composable imports:** run `import_timor_geo_data` then
-  `import_timor_geo_data_aldeias` on the same DB. Suco pcodes are authoritative
-  from `sukus.gpkg`; ~72 aldeia rows with stale `NewSucoCod` in the upstream INTL
-  bundle are remapped spatially at import time.
+  `import_timor_geo_data_aldeias` on the same DB.
+- **Suco pcode authority:** `sukus.gpkg` (`Suco.shp`) is canonical for suco pcodes
+  and names. Aldeia `NewSucoCod` in `aldeias_2024.gpkg` is **not authoritative**
+  when it disagrees — the upstream INTL aldeia layer is census-EA prep data and
+  explicitly not official. There is no public MAE/INETL shapefile release with
+  consistent `New*Cod` across suco and aldeia layers; legal admin boundaries live
+  in ministerial diplomas (text annexes). Census geography used 452 sucos / 2231
+  aldeias; this bundle has 466 / 2238.
+- **Remapping:** 15 attribute-level pcode mismatches are audited in
+  `timor_locations/data/crosswalk/aldeia_suco_pcode_remap.csv`. At import time the
+  hybrid resolver (trust matching `NewSucoCod` when the aldeia `SUCO` name agrees,
+  else spatial containment) may remap ~72 aldeia rows off stale aldeia-layer codes.
+- When sucos are already loaded from `sukus.gpkg`, the aldeia importer **skips
+  suco/admin-post/municipality geometry rollup** so suko polygons are not replaced
+  by unions of aldeia polygons.
 
 ### 0.2.0
 

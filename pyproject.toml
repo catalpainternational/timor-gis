@@ -23,13 +23,13 @@ exclude = ['migrations']
 
 [tool.poetry]
 name = "timor-locations"
-version = "0.2.0"
+version = "0.3.0"
 description = "Timor-Leste geographic datasets"
 authors = [
   "Joshua Brooks <josh@catalpa.io>",
   "Anders Hofstee <anders@catalpa.io>",
 ]
-# timor_locations/data is INCLUDED: the importer loads sukus.gpkg / aldeias_2022.gpkg
+# timor_locations/data is INCLUDED: the importer loads sukus.gpkg / aldeias_2024.gpkg
 # at runtime via resources.files("timor_locations.data"), so the data must ship in
 # the wheel for `pip install` + import_timor_geo_data to work.
 exclude = ["tests", "sl_tests", "docs"]

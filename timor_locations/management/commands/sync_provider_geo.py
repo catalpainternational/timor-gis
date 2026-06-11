@@ -35,7 +35,7 @@ GPKG = DATA / "sukus.gpkg"
 XWALK = DATA / "crosswalk" / "suco_crosswalk.csv"
 OVERRIDES = DATA / "crosswalk" / "suco_overrides.csv"
 REPORT = DATA / "crosswalk" / "sync_report.md"
-ALDEIA_GPKG = DATA / "aldeias_2022.gpkg"
+ALDEIA_GPKG = DATA / "aldeias_2024.gpkg"
 ALDEIA_REPORT = DATA / "crosswalk" / "aldeia_sync_report.md"
 
 

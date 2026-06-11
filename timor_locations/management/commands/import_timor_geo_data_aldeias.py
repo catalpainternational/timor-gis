@@ -98,28 +98,36 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(f"Remapped {remapped} aldeias off stale aldeia-layer NewSucoCod values"))
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                "Populate the suco / admin post / municipality geometries based on the Aldeia geometries"
+        if sucos_preloaded:
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "Skipping suco/adminpost/municipality geometry rollup — "
+                    "sucos were already loaded from sukus.gpkg via import_timor_geo_data"
+                )
             )
-        )
-        with connection.cursor() as c:
-            c.execute(
-                """
-                UPDATE timor_locations_suco sc
-                    SET geom = (
-                        SELECT st_multi(st_union(geom)) FROM timor_locations_aldeia a
-                        WHERE a.suco_id = sc.pcode
-                    );
-                UPDATE timor_locations_administrativepost ap
-                    SET geom = (
-                        SELECT st_multi(st_union(geom)) FROM timor_locations_suco s
-                        WHERE s.adminpost_id = ap.pcode
-                    );
-                UPDATE timor_locations_municipality m
-                    SET geom = (
-                        SELECT st_multi(st_union(geom)) FROM timor_locations_administrativepost ap
-                        WHERE ap.municipality_id = m.pcode
-                    );
-                """
+        else:
+            self.stdout.write(
+                self.style.SUCCESS(
+                    "Populate the suco / admin post / municipality geometries based on the Aldeia geometries"
+                )
             )
+            with connection.cursor() as c:
+                c.execute(
+                    """
+                    UPDATE timor_locations_suco sc
+                        SET geom = (
+                            SELECT st_multi(st_union(geom)) FROM timor_locations_aldeia a
+                            WHERE a.suco_id = sc.pcode
+                        );
+                    UPDATE timor_locations_administrativepost ap
+                        SET geom = (
+                            SELECT st_multi(st_union(geom)) FROM timor_locations_suco s
+                            WHERE s.adminpost_id = ap.pcode
+                        );
+                    UPDATE timor_locations_municipality m
+                        SET geom = (
+                            SELECT st_multi(st_union(geom)) FROM timor_locations_administrativepost ap
+                            WHERE ap.municipality_id = m.pcode
+                        );
+                    """
+                )
